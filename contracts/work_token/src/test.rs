@@ -1,3 +1,6 @@
+// WorkToken test suite — 10 unit tests
+// Covers: initialize, balance, mint (happy + edge cases), set_escrow
+// Run: cargo test -p work_token
 #![cfg(test)]
 
 use super::*;
