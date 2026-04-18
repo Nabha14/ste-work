@@ -1,3 +1,6 @@
+// WorkToken — SEP-41 compliant custom reputation token
+// Minted exclusively by EscrowContract via inter-contract call
+// 1 WORK token per 100 XLM of approved milestone value
 #![no_std]
 
 use soroban_sdk::{
