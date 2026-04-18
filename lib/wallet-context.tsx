@@ -1,6 +1,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import {
+  isConnected as freighterIsConnected,
+  requestAccess,
+  getAddress,
+  signTransaction as freighterSign,
+} from "@stellar/freighter-api";
 import { NETWORK_PASSPHRASE } from "./contracts/config";
 
 interface WalletContextType {
@@ -24,9 +30,10 @@ const WalletContext = createContext<WalletContextType>({
 });
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
-  const [address, setAddress] = useState<string | null>(null);
+  const [address, setAddress]           = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Restore session
   useEffect(() => {
     const saved = localStorage.getItem("sw_wallet");
     if (saved) setAddress(saved);
@@ -35,18 +42,40 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
-      if (typeof window !== "undefined" && (window as any).freighter) {
-        const freighter = (window as any).freighter;
-        await freighter.setAllowed();
-        const { publicKey } = await freighter.getPublicKey();
-        setAddress(publicKey);
-        localStorage.setItem("sw_wallet", publicKey);
-      } else {
-        // Freighter not installed — show install prompt
+      // Check if Freighter is installed
+      const connected = await freighterIsConnected();
+      if (!connected) {
+        alert(
+          "Freighter not detected.\n\n" +
+          "Please:\n" +
+          "1. Install Freighter from freighter.app\n" +
+          "2. Refresh this page\n" +
+          "3. Try connecting again"
+        );
         window.open("https://www.freighter.app/", "_blank");
+        return;
       }
-    } catch (e) {
-      console.error("Wallet connect failed", e);
+
+      // Request access (shows Freighter popup)
+      const accessResult = await requestAccess();
+      if (accessResult.error) {
+        throw new Error(accessResult.error);
+      }
+
+      // Get the public key
+      const addressResult = await getAddress();
+      if (addressResult.error) {
+        throw new Error(addressResult.error);
+      }
+
+      const pub = addressResult.address;
+      setAddress(pub);
+      localStorage.setItem("sw_wallet", pub);
+    } catch (e: any) {
+      console.error("Wallet connect failed:", e);
+      if (!e.message?.toLowerCase().includes("declined")) {
+        alert(`Connection failed: ${e.message}`);
+      }
     } finally {
       setIsConnecting(false);
     }
@@ -58,14 +87,11 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signTransaction = useCallback(async (xdr: string): Promise<string> => {
-    if (typeof window === "undefined" || !(window as any).freighter) {
-      throw new Error("Freighter not installed");
-    }
-    const freighter = (window as any).freighter;
-    const { signedTxXdr } = await freighter.signTransaction(xdr, {
+    const result = await freighterSign(xdr, {
       networkPassphrase: NETWORK_PASSPHRASE,
     });
-    return signedTxXdr;
+    if (result.error) throw new Error(result.error);
+    return result.signedTxXdr;
   }, []);
 
   return (
