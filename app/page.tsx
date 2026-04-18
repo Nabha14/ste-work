@@ -1,4 +1,5 @@
 "use client";
+// Landing page — hero, dashboard preview, how it works, features, CTA
 
 import Link from "next/link";
 import { useWallet } from "@/lib/wallet-context";
