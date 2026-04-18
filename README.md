@@ -1,7 +1,8 @@
 # StellarWork — Decentralized Freelance Escrow
 
-> Milestone-based freelance escrow powered by Soroban smart contracts on Stellar.  
-> Built for **Stellar Journey to Mastery — Level 4 Green Belt**
+> Milestone-based freelance escrow powered by Soroban smart contracts on Stellar.
+
+🔴 **[Live Demo → ste-work.vercel.app](https://ste-work.vercel.app)**
 
 [![CI](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml/badge.svg)](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml)
 
@@ -19,7 +20,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 
 ---
 
-## Level 4 Green Belt Checklist
+## Checklist
 
 | Requirement | Status |
 |---|---|
