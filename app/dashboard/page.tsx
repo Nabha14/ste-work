@@ -82,17 +82,19 @@ export default function Dashboard() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
-            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>Dashboard</h1>
+            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>
+              {isConnected ? `Welcome back${address ? ", " + formatAddress(address, 4) : ""}` : "Your Dashboard"}
+            </h1>
             {isConnected && address ? (
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
                 <span style={{ fontSize: 12, fontFamily: "monospace", color: "#555" }}>{formatAddress(address, 8)}</span>
                 <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#22c55e" }}>
                   <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e" }} />
-                  Testnet
+                  Stellar Testnet
                 </span>
               </div>
             ) : (
-              <p style={{ fontSize: 13, color: "#555", marginTop: 4 }}>Connect wallet to see your data</p>
+              <p style={{ fontSize: 13, color: "#555", marginTop: 4 }}>Connect your Freighter wallet to view your jobs, earnings and escrow contracts</p>
             )}
           </div>
           <div style={{ display: "flex", gap: 10 }}>
@@ -102,6 +104,33 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {/* Not connected banner */}
+        {!isConnected && (
+          <div style={{
+            background: "linear-gradient(135deg, #1a0a0b, #111)",
+            border: "1px solid rgba(232,50,60,0.2)",
+            borderRadius: 16, padding: "28px 32px",
+            marginBottom: 24,
+            display: "flex", alignItems: "center", justifyContent: "space-between", gap: 24,
+          }}>
+            <div>
+              <h3 style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>Get started with StellarWork</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                {[
+                  "① Connect your Freighter wallet (Stellar Testnet)",
+                  "② Post a job and lock XLM into escrow",
+                  "③ Approve milestones to release payment on-chain",
+                ].map(step => (
+                  <p key={step} style={{ fontSize: 13, color: "#666" }}>{step}</p>
+                ))}
+              </div>
+            </div>
+            <button onClick={connect} style={{ ...redBtn, whiteSpace: "nowrap", padding: "10px 24px", fontSize: 14 }}>
+              Connect Wallet
+            </button>
+          </div>
+        )}
 
         {/* Error */}
         {error && (
@@ -143,7 +172,10 @@ export default function Dashboard() {
           {/* My Jobs */}
           <div style={{ ...card, gridColumn: "1 / 3" }}>
             <div style={cardHeader}>
-              <span style={cardTitle}>My Jobs</span>
+              <div>
+                <span style={cardTitle}>My Jobs</span>
+                <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>Jobs where you are the client or freelancer</div>
+              </div>
               <Link href="/jobs" style={viewAll}>View All <ChevronRight size={13} /></Link>
             </div>
 
@@ -153,9 +185,21 @@ export default function Dashboard() {
               </div>
             ) : myJobs.length === 0 ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
-                <p style={{ fontSize: 13, color: "#555" }}>
-                  {isConnected ? "No jobs yet. Post one or browse open jobs." : "Connect wallet to see your jobs."}
+                <Briefcase size={32} color="#222" style={{ margin: "0 auto 12px" }} />
+                <p style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 6 }}>
+                  {isConnected ? "No jobs yet" : "Wallet not connected"}
                 </p>
+                <p style={{ fontSize: 12, color: "#555", marginBottom: 16 }}>
+                  {isConnected
+                    ? "Post a job as a client or browse open jobs to work as a freelancer"
+                    : "Connect your Freighter wallet to see your jobs"}
+                </p>
+                {isConnected && (
+                  <div style={{ display: "flex", gap: 8, justifyContent: "center" }}>
+                    <button onClick={() => setShowPost(true)} style={{ ...redBtn, fontSize: 12, padding: "6px 14px" }}>Post a Job</button>
+                    <Link href="/jobs" style={{ ...secondaryBtn, textDecoration: "none", fontSize: 12, padding: "6px 14px" }}>Browse Jobs</Link>
+                  </div>
+                )}
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -201,8 +245,14 @@ export default function Dashboard() {
           {/* Chain Activity */}
           <div style={{ ...card, gridRow: "1 / 3" }}>
             <div style={cardHeader}>
-              <span style={cardTitle}>Chain Activity</span>
-              <span style={{ fontSize: 11, color: "#555" }}>Live</span>
+              <div>
+                <span style={cardTitle}>Chain Activity</span>
+                <div style={{ fontSize: 11, color: "#444", marginTop: 3 }}>All jobs on Stellar testnet</div>
+              </div>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#22c55e" }}>
+                <span style={{ width: 5, height: 5, borderRadius: "50%", background: "#22c55e" }} />
+                Live
+              </span>
             </div>
 
             {loading ? (
@@ -211,7 +261,8 @@ export default function Dashboard() {
               </div>
             ) : jobs.length === 0 ? (
               <div style={{ textAlign: "center", padding: "32px 0" }}>
-                <p style={{ fontSize: 12, color: "#555" }}>No on-chain activity yet</p>
+                <p style={{ fontSize: 12, color: "#555", marginBottom: 4 }}>No on-chain activity yet</p>
+                <p style={{ fontSize: 11, color: "#333" }}>Be the first to post a job</p>
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
@@ -268,7 +319,7 @@ export default function Dashboard() {
               <div>
                 <span style={cardTitle}>Escrow Health</span>
                 <div style={{ fontSize: 11, color: "#444", marginTop: 2 }}>
-                  {loading ? "Loading..." : `${jobs.length} total contracts on-chain`}
+                  {loading ? "Checking contracts..." : `${jobs.length} contract${jobs.length !== 1 ? "s" : ""} tracked on-chain`}
                 </div>
               </div>
               <span style={{
