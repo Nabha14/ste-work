@@ -82,6 +82,10 @@ function scValToJob(val: xdr.ScVal): Job {
 }
 
 // ── Simulate (read-only) ──────────────────────────────────────────────────────
+// Uses a well-known funded testnet account for simulation only
+
+// Stellar testnet friendbot-funded account for read-only simulations
+const SIM_ACCOUNT = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
 
 async function simulate(
   contractId: string,
@@ -89,13 +93,13 @@ async function simulate(
   args: xdr.ScVal[],
 ): Promise<xdr.ScVal> {
   const rpc = getRpc();
-  const account = await rpc.getAccount(
-    "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN", // fee-only dummy
-  ).catch(() => ({
-    accountId: () => "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN",
+
+  // Build a minimal account object — sequence number doesn't matter for simulation
+  const account = {
+    accountId: () => SIM_ACCOUNT,
     sequenceNumber: () => "0",
     incrementSequenceNumber: () => {},
-  }));
+  };
 
   const contract = new Contract(contractId);
   const tx = new TransactionBuilder(account as any, {
@@ -107,18 +111,24 @@ async function simulate(
     .build();
 
   const result = await rpc.simulateTransaction(tx);
+
   if (SorobanRpc.Api.isSimulationError(result)) {
-    throw new Error(`Simulation error: ${result.error}`);
+    throw new Error(`Simulation error: ${(result as any).error}`);
   }
-  const successResult = result as SorobanRpc.Api.SimulateTransactionSuccessResponse;
-  return successResult.result!.retval;
+
+  const success = result as SorobanRpc.Api.SimulateTransactionSuccessResponse;
+  if (!success.result) {
+    throw new Error("No result from simulation");
+  }
+  return success.result.retval;
 }
 
 // ── Read functions ────────────────────────────────────────────────────────────
 
 export async function getJobCount(): Promise<bigint> {
   const val = await simulate(ESCROW_CONTRACT_ID, "job_count", []);
-  return BigInt(scValToNative(val) as number);
+  const native = scValToNative(val);
+  return BigInt(native as number | string);
 }
 
 export async function getJob(jobId: bigint): Promise<Job> {
@@ -129,20 +139,31 @@ export async function getJob(jobId: bigint): Promise<Job> {
 }
 
 export async function listJobs(offset: bigint, limit: bigint): Promise<Job[]> {
+  // First check count — if 0, return early
+  const count = await getJobCount();
+  if (count === 0n) return [];
+
   const idsVal = await simulate(ESCROW_CONTRACT_ID, "list_jobs", [
     nativeToScVal(Number(offset), { type: "u64" }),
     nativeToScVal(Number(limit),  { type: "u64" }),
   ]);
-  const ids = scValToNative(idsVal) as number[];
+
+  const ids = scValToNative(idsVal) as (number | bigint)[];
+  if (!ids || ids.length === 0) return [];
+
   const jobs = await Promise.all(ids.map(id => getJob(BigInt(id))));
   return jobs;
 }
 
 export async function getWorkTokenBalance(address: string): Promise<bigint> {
-  const val = await simulate(WORK_TOKEN_CONTRACT_ID, "balance", [
-    addressToScVal(address),
-  ]);
-  return BigInt(scValToNative(val) as number);
+  try {
+    const val = await simulate(WORK_TOKEN_CONTRACT_ID, "balance", [
+      addressToScVal(address),
+    ]);
+    return BigInt(scValToNative(val) as number);
+  } catch {
+    return 0n;
+  }
 }
 
 export async function getWorkTokenSupply(): Promise<bigint> {
