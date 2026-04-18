@@ -225,6 +225,8 @@ impl EscrowContract {
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
 
         // ── Inter-contract call: mint WORK reputation tokens ──────────────
+        // Level 4 Green Belt requirement: EscrowContract calls WorkToken.mint
+        // 1 WORK token per 100 XLM of milestone value (minimum 1)
         let work_token_addr: Address = env
             .storage()
             .instance()
