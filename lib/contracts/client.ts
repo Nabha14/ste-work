@@ -58,25 +58,38 @@ function addressToScVal(addr: string) {
 
 function scValToJob(val: xdr.ScVal): Job {
   const map = scValToNative(val) as Record<string, unknown>;
+
+  // status comes back as ["Locked"] (enum variant array) — extract the string
+  function parseStatus(s: unknown): MilestoneStatus {
+    if (Array.isArray(s)) return s[0] as MilestoneStatus;
+    return s as MilestoneStatus;
+  }
+
+  // amounts come back as bigint from scValToNative
+  function toBigInt(v: unknown): bigint {
+    if (typeof v === "bigint") return v;
+    return BigInt(v as number | string);
+  }
+
   return {
-    id:          BigInt(map.id as number),
+    id:          toBigInt(map.id),
     title:       map.title as string,
     description: map.description as string,
     client:      map.client as string,
     freelancer:  (map.freelancer as string | null | undefined) ?? null,
     token:       map.token as string,
-    total:       BigInt(map.total as number),
+    total:       toBigInt(map.total),
     milestones:  (map.milestones as unknown[]).map((m: unknown) => {
       const ms = m as Record<string, unknown>;
       return {
         title:       ms.title as string,
-        amount:      BigInt(ms.amount as number),
-        status:      ms.status as MilestoneStatus,
+        amount:      toBigInt(ms.amount),
+        status:      parseStatus(ms.status),
         deliverable: ms.deliverable as string,
-        deadline:    BigInt(ms.deadline as number),
+        deadline:    toBigInt(ms.deadline),
       };
     }),
-    created_at:  BigInt(map.created_at as number),
+    created_at:  toBigInt(map.created_at),
     is_open:     map.is_open as boolean,
   };
 }
@@ -84,8 +97,8 @@ function scValToJob(val: xdr.ScVal): Job {
 // ── Simulate (read-only) ──────────────────────────────────────────────────────
 // Uses a well-known funded testnet account for simulation only
 
-// Stellar testnet friendbot-funded account for read-only simulations
-const SIM_ACCOUNT = "GAAZI4TCR3TY5OJHCTJC2A4QSY6CJWJH5IAJTGKIN2ER7LBNVKOCCWN";
+// Stellar testnet deployer address used for read-only simulations
+const SIM_ACCOUNT = "GC5HL2KXTCEXGZU4N6QIDQLIXW6HSFYEZV7ELAEEHDL4EHUMVSTZCPX6";
 
 async function simulate(
   contractId: string,
@@ -128,6 +141,7 @@ async function simulate(
 export async function getJobCount(): Promise<bigint> {
   const val = await simulate(ESCROW_CONTRACT_ID, "job_count", []);
   const native = scValToNative(val);
+  if (typeof native === "bigint") return native;
   return BigInt(native as number | string);
 }
 
