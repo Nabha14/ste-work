@@ -24,7 +24,7 @@ body { background: #0a0a0a; min-height: 100vh; }
 ::selection { background: rgba(232,50,60,0.3); }
 
 /* ── Design tokens ──
-  --accent:     #e8323c  (primary red)
+  --accent:     #e8323c
   --bg-base:    #0a0a0a
   --bg-card:    #111111
   --bg-elevated:#161616
@@ -33,3 +33,76 @@ body { background: #0a0a0a; min-height: 100vh; }
   --green:      #22c55e
   --orange:     #f97316
 */
+
+/* ── Responsive grid helpers ── */
+.sw-grid-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.sw-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.sw-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+.sw-dashboard-main {
+  display: grid;
+  grid-template-columns: 1fr 1fr 340px;
+  gap: 12px;
+}
+
+/* ── Mobile breakpoints ── */
+@media (max-width: 1024px) {
+  .sw-grid-4       { grid-template-columns: repeat(2, 1fr); }
+  .sw-dashboard-main { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 768px) {
+  .sw-grid-4       { grid-template-columns: repeat(2, 1fr); }
+  .sw-grid-3       { grid-template-columns: 1fr; }
+  .sw-grid-2       { grid-template-columns: 1fr; }
+  .sw-dashboard-main { grid-template-columns: 1fr; }
+
+  /* Stack job card footer on mobile */
+  .sw-job-footer   { flex-direction: column; align-items: flex-start !important; gap: 12px !important; }
+
+  /* Navbar: hide text labels on small screens */
+  .sw-nav-label    { display: none; }
+
+  /* Page padding */
+  .sw-page         { padding: 20px 16px !important; }
+
+  /* Hero headline */
+  .sw-hero-h1      { font-size: 36px !important; letter-spacing: -1px !important; }
+
+  /* Dashboard stats: 2 cols on mobile */
+  .sw-stats-grid   { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Hide secondary columns in tables */
+  .sw-hide-mobile  { display: none !important; }
+
+  /* Full-width buttons on mobile */
+  .sw-btn-mobile   { width: 100% !important; justify-content: center !important; }
+
+  /* Card padding reduction */
+  .sw-card-mobile  { padding: 16px !important; }
+}
+
+@media (max-width: 480px) {
+  .sw-grid-4       { grid-template-columns: 1fr; }
+  .sw-hero-h1      { font-size: 28px !important; }
+  .sw-stats-grid   { grid-template-columns: 1fr !important; }
+}
+
+/* ── Show/hide helpers ── */
+.sw-show-mobile { display: none !important; }
+
+@media (max-width: 768px) {
+  .sw-hide-mobile  { display: none !important; }
+  .sw-show-mobile  { display: flex !important; }
+}

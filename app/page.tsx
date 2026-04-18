@@ -121,7 +121,7 @@ export default function Landing() {
           </div>
 
           {/* Mock dashboard content */}
-          <div style={{ padding: 24, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 12 }}>
+          <div className="sw-grid-4" style={{ padding: 24 }}>
             {[
               { label: "Total Earned", value: "4,820 XLM", sub: "≈ $1,446", color: "#22c55e" },
               { label: "Active Jobs",  value: "3",         sub: "2 pending review", color: "#f97316" },
@@ -185,7 +185,7 @@ export default function Landing() {
           </p>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+        <div className="sw-grid-3" style={{ gap: 16 }}>
           {[
             {
               step: "01",
@@ -243,7 +243,7 @@ export default function Landing() {
           </h2>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <div className="sw-grid-3" style={{ gap: 12 }}>
           {[
             { icon: <Shield size={20} color="#e8323c" />, title: "Dispute Resolution", desc: "3rd-party arbitration built into the contract. Funds split fairly if both parties disagree." },
             { icon: <Zap size={20} color="#e8323c" />,    title: "Instant Settlement", desc: "Payments release in seconds on Stellar's 5-second finality. No waiting, no banks." },

@@ -4,9 +4,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Search, Zap } from "lucide-react";
+import { Bell, Search, Zap, Menu, X } from "lucide-react";
 import { useWallet } from "@/lib/wallet-context";
 import { formatAddress } from "@/lib/utils";
+import { useState } from "react";
 
 const NAV = [
   { label: "Dashboard", href: "/dashboard" },
@@ -20,6 +21,7 @@ export default function Navbar() {
   const path = usePathname();
   const { address, isConnected, isConnecting, connect, disconnect } = useWallet();
   const isLanding = path === "/";
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header style={{
@@ -35,7 +37,7 @@ export default function Navbar() {
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
         {/* Logo */}
-        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none" }}>
+        <Link href="/" style={{ display: "flex", alignItems: "center", gap: 8, textDecoration: "none", flexShrink: 0 }}>
           <div style={{
             width: 28, height: 28, borderRadius: 7,
             background: "#e8323c",
@@ -48,19 +50,15 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Nav links — hide on landing */}
+        {/* Desktop nav links */}
         {!isLanding && (
-          <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <nav style={{ display: "flex", alignItems: "center", gap: 2 }} className="sw-hide-mobile">
             {NAV.map(({ label, href }) => (
               <Link key={href} href={href} style={{
-                padding: "6px 12px",
-                borderRadius: 8,
-                fontSize: 13,
-                fontWeight: 500,
-                textDecoration: "none",
+                padding: "6px 12px", borderRadius: 8,
+                fontSize: 13, fontWeight: 500, textDecoration: "none",
                 color: path === href ? "#fff" : "#666",
                 background: path === href ? "#1a1a1a" : "transparent",
-                transition: "all 0.15s",
               }}>
                 {label}
               </Link>
@@ -68,48 +66,73 @@ export default function Navbar() {
           </nav>
         )}
 
-        {/* Right */}
+        {/* Right side */}
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           {!isLanding && (
-            <>
-              <button style={iconBtn}><Search size={15} color="#666" /></button>
-              <button style={{ ...iconBtn, position: "relative" }}>
-                <Bell size={15} color="#666" />
-                <span style={{
-                  position: "absolute", top: 8, right: 8,
-                  width: 6, height: 6, borderRadius: "50%",
-                  background: "#e8323c",
-                }} />
-              </button>
-            </>
+            <button style={iconBtn} className="sw-hide-mobile">
+              <Search size={15} color="#666" />
+            </button>
           )}
 
           {isConnected && address ? (
             <button onClick={disconnect} style={{
               display: "flex", alignItems: "center", gap: 6,
               padding: "6px 12px", borderRadius: 8,
-              border: "1px solid #2a2a2a",
-              background: "#141414",
-              fontSize: 12, fontFamily: "monospace",
-              color: "#ccc", cursor: "pointer",
+              border: "1px solid #2a2a2a", background: "#141414",
+              fontSize: 12, fontFamily: "monospace", color: "#ccc", cursor: "pointer",
             }}>
               <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22c55e" }} />
-              {formatAddress(address)}
+              <span className="sw-hide-mobile">{formatAddress(address)}</span>
+              <span style={{ display: "none" }} className="sw-show-mobile">Connected</span>
             </button>
           ) : (
             <button onClick={connect} disabled={isConnecting} style={{
               padding: "7px 16px", borderRadius: 8,
-              background: "#e8323c",
-              border: "none",
-              fontSize: 13, fontWeight: 600,
-              color: "#fff", cursor: "pointer",
+              background: "#e8323c", border: "none",
+              fontSize: 13, fontWeight: 600, color: "#fff", cursor: "pointer",
               opacity: isConnecting ? 0.6 : 1,
             }}>
-              {isConnecting ? "Connecting..." : "Connect Wallet"}
+              {isConnecting ? "..." : "Connect"}
+            </button>
+          )}
+
+          {/* Mobile hamburger */}
+          {!isLanding && (
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              style={{ ...iconBtn, display: "none" }}
+              className="sw-show-mobile"
+            >
+              {mobileOpen ? <X size={18} color="#fff" /> : <Menu size={18} color="#fff" />}
             </button>
           )}
         </div>
       </div>
+
+      {/* Mobile dropdown menu */}
+      {mobileOpen && !isLanding && (
+        <div style={{
+          background: "#0f0f0f", borderBottom: "1px solid #1a1a1a",
+          padding: "12px 24px 16px",
+          display: "flex", flexDirection: "column", gap: 4,
+        }}>
+          {NAV.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={() => setMobileOpen(false)}
+              style={{
+                padding: "10px 14px", borderRadius: 9,
+                fontSize: 14, fontWeight: 500, textDecoration: "none",
+                color: path === href ? "#fff" : "#666",
+                background: path === href ? "#1a1a1a" : "transparent",
+              }}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
     </header>
   );
 }
