@@ -96,8 +96,7 @@ export default function Escrow() {
 
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
-
+      <div className="sw-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
         <div style={{ marginBottom: 28 }}>
           <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>Escrow Contracts</h1>
           <p style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
@@ -129,7 +128,7 @@ export default function Escrow() {
         )}
 
         {/* Summary */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
+        <div className="sw-grid-3" style={{ gap: 12, marginBottom: 24 }}>
           {[
             { label: "Total Locked",    value: `${xlm(totalLocked)} XLM`,    color: "#e8323c", icon: <Lock size={16} color="#e8323c" /> },
             { label: "Total Released",  value: `${xlm(totalReleased)} XLM`,  color: "#22c55e", icon: <CheckCircle2 size={16} color="#22c55e" /> },

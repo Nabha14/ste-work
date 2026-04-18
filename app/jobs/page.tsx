@@ -72,8 +72,7 @@ export default function Jobs() {
 
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
-
+      <div className="sw-page" style={{ maxWidth: 1280, margin: "0 auto", padding: "32px 24px" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
@@ -147,7 +146,7 @@ export default function Jobs() {
             <div style={{ fontSize: 12, fontWeight: 600, color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>
               Open · {openJobs.length}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12, marginBottom: 32 }}>
+            <div className="sw-grid-2" style={{ marginBottom: 32 }}>
               {openJobs.map(job => (
                 <JobCard
                   key={String(job.id)}
@@ -168,7 +167,7 @@ export default function Jobs() {
             <div style={{ fontSize: 12, fontWeight: 600, color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 12 }}>
               In Progress · {inProgressJobs.length}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+            <div className="sw-grid-2">
               {inProgressJobs.map(job => (
                 <JobCard
                   key={String(job.id)}
@@ -253,7 +252,7 @@ function JobCard({ job, onAccept, accepting, isConnected, currentAddress }: {
         ))}
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, borderTop: "1px solid #1a1a1a" }}>
+      <div className="sw-job-footer" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: 16, borderTop: "1px solid #1a1a1a" }}>
         <div style={{ display: "flex", gap: 20 }}>
           <div>
             <div style={{ fontSize: 16, fontWeight: 800 }}>{totalXlm} XLM</div>

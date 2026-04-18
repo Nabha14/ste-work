@@ -75,8 +75,7 @@ export default function MyWork() {
 
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
-
+      <div className="sw-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 24px" }}>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 28 }}>
           <div>
@@ -122,7 +121,7 @@ export default function MyWork() {
         )}
 
         {/* Stats */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 24 }}>
+        <div className="sw-grid-4 sw-stats-grid" style={{ marginBottom: 24 }}>
           {[
             { label: "Active Jobs",   value: loading ? "—" : String(activeJobs.length),    icon: <Briefcase size={16} color="#f97316" />,    color: "#f97316" },
             { label: "Total Earned",  value: loading ? "—" : `${xlm(totalEarned)} XLM`,    icon: <CheckCircle2 size={16} color="#22c55e" />,  color: "#22c55e" },

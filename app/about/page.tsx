@@ -22,7 +22,7 @@ const TIMELINE = [
 export default function About() {
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 24px" }}>
+      <div className="sw-page" style={{ maxWidth: 1100, margin: "0 auto", padding: "60px 24px" }}>
 
         {/* Header */}
         <div style={{ marginBottom: 64 }}>
@@ -48,12 +48,12 @@ export default function About() {
         </div>
 
         {/* Mission */}
-        <div style={{
+        <div className="sw-grid-2" style={{
           background: "#111", borderRadius: 20,
           border: "1px solid #1f1f1f",
           padding: "40px 48px",
           marginBottom: 48,
-          display: "grid", gridTemplateColumns: "1fr 1fr", gap: 48,
+          gap: 48,
         }}>
           <div>
             <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 16 }}>
@@ -85,7 +85,7 @@ export default function About() {
           <p style={{ fontSize: 15, color: "#555", marginBottom: 32 }}>
             Built to satisfy Stellar Journey to Mastery Level 4 (Green Belt) requirements.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+          <div className="sw-grid-3" style={{ gap: 16 }}>
             {TEAM.map(({ name, role, desc, icon }) => (
               <div key={name} style={{
                 background: "#111", borderRadius: 16,
@@ -117,7 +117,7 @@ export default function About() {
           <h2 style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.5px", marginBottom: 24 }}>
             Smart Contract Design
           </h2>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 32 }}>
+          <div className="sw-grid-2" style={{ gap: 32 }}>
             <div>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: "#e8323c", marginBottom: 12 }}>EscrowContract</h3>
               <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: 10 }}>
