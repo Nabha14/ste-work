@@ -74,7 +74,7 @@ export default function About() {
             Technical Architecture
           </h2>
           <p style={{ fontSize: 15, color: "#555", marginBottom: 32 }}>
-            Built to satisfy Stellar Journey to Mastery Level 4 (Green Belt) requirements.
+            The core of StellarWork is two Soroban smart contracts that work together.
           </p>
           <div className="sw-grid-3" style={{ gap: 16 }}>
             {TEAM.map(({ name, role, desc, icon }) => (
@@ -134,7 +134,7 @@ export default function About() {
                   "Minted only by EscrowContract via inter-contract call",
                   "Non-transferable reputation score (soulbound)",
                   "Queryable on-chain for job eligibility checks",
-                  "Satisfies Level 4 custom token + inter-contract requirements",
+                  "Reputation score grows with every completed milestone",
                 ].map(item => (
                   <li key={item} style={{ display: "flex", gap: 10, fontSize: 13, color: "#666" }}>
                     <span style={{ color: "#22c55e", flexShrink: 0, marginTop: 1 }}>✓</span>
