@@ -1,3 +1,7 @@
+// EscrowContract test suite — 35 unit tests
+// Covers: full job lifecycle, multi-milestone, disputes, 50/50 splits,
+//         deadline timeouts, pagination, auth failures, edge cases
+// Run: cargo test -p escrow_contract
 #![cfg(test)]
 
 use super::*;
