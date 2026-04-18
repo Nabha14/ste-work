@@ -1,36 +1,220 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StellarWork — Decentralized Freelance Escrow
+
+> Milestone-based freelance escrow powered by Soroban smart contracts on Stellar.  
+> Built for **Stellar Journey to Mastery — Level 4 Green Belt**
+
+[![CI](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml/badge.svg)](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml)
+
+---
+
+## What is StellarWork?
+
+StellarWork eliminates trust between clients and freelancers by encoding the entire payment agreement into immutable Soroban smart contracts. Funds are locked on-chain and released automatically when milestones are approved — no middlemen, no platform fees, no trust required.
+
+**How it works:**
+1. Client posts a job and locks XLM into the `EscrowContract`
+2. Freelancer accepts the job and submits deliverables per milestone
+3. Client approves → XLM releases instantly + `WORK` reputation tokens minted
+4. If disputed, an arbitrator splits funds via basis points
+
+---
+
+## Level 4 Green Belt Checklist
+
+| Requirement | Status |
+|---|---|
+| Inter-contract calls | ✅ `EscrowContract.approve_milestone` calls `WorkToken.mint` |
+| Custom SEP-41 token | ✅ `WorkToken` (WORK reputation token, non-transferable) |
+| Advanced contract patterns | ✅ Milestone state machine, dispute resolution, time-locked deadlines |
+| Production readiness | ✅ CI/CD via GitHub Actions, deployed to Stellar testnet |
+| Mobile responsive design | ✅ Fully responsive across all pages |
+| Contract tests | ✅ 45 unit tests (10 WorkToken + 35 EscrowContract) |
+
+---
+
+## Deployed Contracts (Stellar Testnet)
+
+| Contract | Address |
+|---|---|
+| `WorkToken` (SEP-41) | `CAWVOIUBWDGXW7S34GJAKMZYJEKEDS3UJ45UP47CQ2ZFKYHFY7CBHKJI` |
+| `EscrowContract` | `CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B` |
+
+- [WorkToken on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CAWVOIUBWDGXW7S34GJAKMZYJEKEDS3UJ45UP47CQ2ZFKYHFY7CBHKJI)
+- [EscrowContract on Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B)
+
+---
+
+## Tech Stack
+
+- **Smart Contracts** — Rust + Soroban SDK 22
+- **Frontend** — Next.js 14, TypeScript, Tailwind CSS
+- **Wallet** — Freighter (Stellar browser extension)
+- **Chain interaction** — `@stellar/stellar-sdk` Soroban RPC
+- **CI/CD** — GitHub Actions
+
+---
+
+## Project Structure
+
+```
+stellarwork/
+├── app/                    # Next.js App Router pages
+│   ├── page.tsx            # Landing page
+│   ├── dashboard/          # Live on-chain dashboard
+│   ├── jobs/               # Browse & accept jobs
+│   ├── escrow/             # Milestone tracker
+│   ├── my-work/            # Freelancer view
+│   └── about/              # Project info & architecture
+├── components/
+│   ├── layout/Navbar.tsx   # Sticky nav with wallet connect
+│   ├── ui/                 # Card, Badge, Button, Sparkline
+│   └── dashboard/          # PostJobModal
+├── lib/
+│   ├── contracts/
+│   │   ├── client.ts       # Soroban RPC read/write helpers
+│   │   └── config.ts       # Contract addresses & network config
+│   ├── wallet-context.tsx  # Freighter wallet provider
+│   └── utils.ts            # Formatting helpers
+└── contracts/
+    ├── work_token/         # SEP-41 WORK reputation token
+    │   ├── src/lib.rs
+    │   └── src/test.rs     # 10 unit tests
+    └── escrow_contract/    # Milestone escrow state machine
+        ├── src/lib.rs
+        └── src/test.rs     # 35 unit tests
+```
+
+---
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 20+
+- Rust + `wasm32-unknown-unknown` target
+- [Stellar CLI](https://developers.stellar.org/docs/tools/developer-tools/cli/install-cli)
+- [Freighter wallet](https://www.freighter.app/) browser extension
+
+### Run the frontend
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Environment variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create `.env.local`:
 
-## Learn More
+```env
+NEXT_PUBLIC_NETWORK=testnet
+NEXT_PUBLIC_HORIZON_URL=https://horizon-testnet.stellar.org
+NEXT_PUBLIC_SOROBAN_RPC=https://soroban-testnet.stellar.org
+NEXT_PUBLIC_ESCROW_CONTRACT_ID=CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B
+NEXT_PUBLIC_WORK_TOKEN_CONTRACT_ID=CAWVOIUBWDGXW7S34GJAKMZYJEKEDS3UJ45UP47CQ2ZFKYHFY7CBHKJI
+NEXT_PUBLIC_NATIVE_TOKEN=CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC
+```
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Smart Contract Development
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Build contracts
 
-## Deploy on Vercel
+```bash
+cd contracts
+stellar contract build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Run all tests (45 passing)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+cd contracts
+cargo test --workspace
+```
+
+Output:
+```
+test result: ok. 35 passed; 0 failed  ← EscrowContract
+test result: ok. 10 passed; 0 failed  ← WorkToken
+```
+
+### Test coverage
+
+**WorkToken (10 tests)**
+- `test_initialize_sets_metadata`
+- `test_initialize_zero_supply`
+- `test_initialize_twice_panics`
+- `test_balance_zero_for_unknown_address`
+- `test_mint_increases_balance_and_supply`
+- `test_mint_accumulates_across_calls`
+- `test_mint_multiple_recipients_independent`
+- `test_mint_zero_panics`
+- `test_mint_negative_panics`
+- `test_set_escrow_updates_minter`
+
+**EscrowContract (35 tests)**
+- Initialize, double-init guard
+- Post job: id, count, fund transfer, stored data, multi-milestone, validation panics
+- Accept job: assigns freelancer, double-accept guard, nonexistent job
+- Submit milestone: status change, deliverable stored, double-submit guard
+- Approve milestone: payment release, status update, partial multi-milestone release
+- Dispute: status change, locked milestone guard, stranger auth guard
+- Resolve dispute: 100% freelancer, 100% client, 50/50 split, invalid bps, non-disputed guard
+- Claim timeout: releases after deadline, before-deadline guard, no-deadline guard
+- List jobs: empty, all, pagination
+- Full lifecycle integration test
+
+---
+
+## Contract Architecture
+
+### EscrowContract
+
+```
+post_job()        → locks XLM, creates Job with milestones
+accept_job()      → assigns freelancer, closes job to new applicants
+submit_milestone()→ freelancer submits deliverable hash (IPFS or text)
+approve_milestone()→ client approves → releases XLM + mints WORK tokens ← inter-contract call
+dispute_milestone()→ either party raises dispute
+resolve_dispute() → admin splits funds by basis points (0–10000)
+claim_timeout()   → freelancer claims if deadline passed and client unresponsive
+```
+
+### WorkToken (SEP-41)
+
+```
+initialize()   → sets admin + escrow contract address
+mint()         → only callable by EscrowContract (inter-contract auth)
+balance()      → returns WORK token balance for address
+total_supply() → total WORK tokens minted
+set_escrow()   → admin can update escrow contract address
+```
+
+### Inter-contract call flow
+
+```
+Client calls approve_milestone()
+  └─ EscrowContract transfers XLM to freelancer
+  └─ EscrowContract calls WorkToken.mint(freelancer, amount)
+       └─ WorkToken verifies caller is EscrowContract
+       └─ WorkToken mints WORK reputation tokens
+```
+
+---
+
+## CI/CD
+
+GitHub Actions runs on every push to `main`:
+
+1. **Contract Tests** — `cargo test --workspace`
+2. **Contract Build** — `stellar contract build` → uploads WASM artifacts
+3. **Frontend** — TypeScript type-check + `next build`
+
+---
+
+## License
+
+MIT
