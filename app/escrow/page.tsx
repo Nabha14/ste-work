@@ -1,4 +1,6 @@
 "use client";
+// Escrow page — reads live contract state, submit/approve milestones on-chain
+// Freelancer submits deliverable hash, client approves to release XLM payment
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/lib/wallet-context";
