@@ -1,3 +1,5 @@
+// Stellar RPC client — reads/writes real on-chain contract state
+// Zero mock data: all data fetched from Stellar testnet via Soroban RPC
 import {
   Contract,
   rpc as SorobanRpc,
