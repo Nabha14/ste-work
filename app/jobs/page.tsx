@@ -1,4 +1,6 @@
 "use client";
+// Jobs page — reads all jobs from EscrowContract.list_jobs() on Stellar testnet
+// Accept job calls EscrowContract.accept_job() via Freighter-signed transaction
 
 import { useState, useEffect, useCallback } from "react";
 import { Search, Filter, Briefcase, Clock, ArrowRight, Plus, Loader2, AlertCircle } from "lucide-react";
