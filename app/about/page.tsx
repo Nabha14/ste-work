@@ -1,4 +1,5 @@
 "use client";
+// About page — project mission, tech architecture, smart contract design, Journey to Mastery timeline
 
 import { Shield, Zap, Code2, Users, Globe, Lock, Star, ArrowRight } from "lucide-react";
 import Link from "next/link";
