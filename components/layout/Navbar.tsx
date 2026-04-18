@@ -1,3 +1,5 @@
+// Navbar — sticky header with wallet connect, active route highlighting
+// Hides nav links on landing page, shows full nav on app pages
 "use client";
 
 import Link from "next/link";
