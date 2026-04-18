@@ -10,15 +10,6 @@ const TEAM = [
   { name: "CI/CD Pipeline",       role: "GitHub Actions / Vercel", desc: "Automated testing and deployment on every push. Soroban contracts tested with cargo test before any frontend deploy.", icon: <Zap size={20} color="#e8323c" /> },
 ];
 
-const TIMELINE = [
-  { level: "Level 1 — White Belt",  desc: "Wallet creation, first on-chain XLM transactions." },
-  { level: "Level 2 — Yellow Belt", desc: "Multi-wallet flows, smart contract deployment, event handling." },
-  { level: "Level 3 — Orange Belt", desc: "Complete mini-dApp with testing, docs, and demo video." },
-  { level: "Level 4 — Green Belt",  desc: "Advanced contracts: inter-contract calls, custom SEP-41 token, CI/CD, mobile responsive. ← We are here.", current: true },
-  { level: "Level 5 — Blue Belt",   desc: "Ship real MVP, onboard first 5 users." },
-  { level: "Level 6 — Black Belt",  desc: "Scale to 20+ users, Demo Day presentation." },
-];
-
 export default function About() {
   return (
     <div style={{ background: "#0a0a0a", minHeight: "100vh" }}>
@@ -152,44 +143,6 @@ export default function About() {
                 ))}
               </ul>
             </div>
-          </div>
-        </div>
-
-        {/* Journey to Mastery Timeline */}
-        <div style={{ marginBottom: 64 }}>
-          <h2 style={{ fontSize: 32, fontWeight: 800, letterSpacing: "-1px", marginBottom: 8 }}>
-            Journey to Mastery Progress
-          </h2>
-          <p style={{ fontSize: 15, color: "#555", marginBottom: 32 }}>
-            Stellar Rise In — Builder Track
-          </p>
-          <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
-            {TIMELINE.map(({ level, desc, current }, i) => (
-              <div key={level} style={{ display: "flex", gap: 20, position: "relative" }}>
-                {/* Line */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                  <div style={{
-                    width: 12, height: 12, borderRadius: "50%", flexShrink: 0, marginTop: 4,
-                    background: current ? "#e8323c" : i < 4 ? "#22c55e" : "#2a2a2a",
-                    border: current ? "2px solid rgba(232,50,60,0.4)" : "none",
-                    boxShadow: current ? "0 0 12px rgba(232,50,60,0.5)" : "none",
-                  }} />
-                  {i < TIMELINE.length - 1 && (
-                    <div style={{ width: 1, flex: 1, background: "#1f1f1f", minHeight: 32 }} />
-                  )}
-                </div>
-                <div style={{ paddingBottom: 28 }}>
-                  <div style={{
-                    fontSize: 13, fontWeight: 700,
-                    color: current ? "#e8323c" : i < 4 ? "#fff" : "#444",
-                    marginBottom: 4,
-                  }}>
-                    {level} {current && <span style={{ fontSize: 11, background: "rgba(232,50,60,0.15)", color: "#e8323c", padding: "2px 8px", borderRadius: 100, marginLeft: 8 }}>Current</span>}
-                  </div>
-                  <div style={{ fontSize: 13, color: "#555" }}>{desc}</div>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
 
