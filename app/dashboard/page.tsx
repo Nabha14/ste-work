@@ -1,4 +1,6 @@
 "use client";
+// Dashboard — live on-chain stats, my jobs, chain activity feed, escrow health
+// All data fetched from Stellar testnet — zero hardcoded values
 
 import { useState, useEffect, useCallback } from "react";
 import { useWallet } from "@/lib/wallet-context";
