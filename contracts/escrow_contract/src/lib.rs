@@ -1,3 +1,6 @@
+// EscrowContract — milestone-based freelance escrow on Soroban
+// State machine: Locked → Submitted → Approved | Disputed
+// Features: multi-milestone, time-locked deadlines, dispute resolution, inter-contract call to WorkToken
 #![no_std]
 
 use soroban_sdk::{
