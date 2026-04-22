@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Trash2, Loader2 } from "lucide-react";
+import { X, Plus, Trash2, Loader2, ChevronDown, ChevronUp, FileCode2, ExternalLink } from "lucide-react";
 import { useWallet } from "@/lib/wallet-context";
 import { buildPostJobTx, submitSignedTx } from "@/lib/contracts/client";
+import { ESCROW_CONTRACT_ID, NETWORK } from "@/lib/contracts/config";
 
 const STROOPS = 10_000_000n;
 
@@ -194,6 +195,9 @@ export default function PostJobModal({
           </span>
         </div>
 
+        {/* Contract Info */}
+        <ContractDetails />
+
         {error && (
           <div style={{
             background: "rgba(232,50,60,0.08)", border: "1px solid rgba(232,50,60,0.2)",
@@ -235,3 +239,130 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 9, color: "#fff", fontSize: 13,
   outline: "none", marginBottom: 0,
 };
+
+// ── Contract transparency panel ───────────────────────────────────────────────
+
+const CONTRACT_FUNCTIONS = [
+  { name: "post_job",          desc: "Locks your XLM into escrow and creates the job on-chain" },
+  { name: "accept_job",        desc: "Freelancer claims the job; escrow stays locked" },
+  { name: "submit_milestone",  desc: "Freelancer submits deliverable hash for a milestone" },
+  { name: "approve_milestone", desc: "Client releases XLM to freelancer + mints WORK tokens" },
+  { name: "dispute_milestone", desc: "Either party raises a dispute on a submitted milestone" },
+  { name: "resolve_dispute",   desc: "Admin splits escrowed funds between client and freelancer" },
+  { name: "claim_timeout",     desc: "Freelancer auto-claims payment after deadline passes" },
+];
+
+function ContractDetails() {
+  const [open, setOpen] = useState(false);
+  const explorerBase = NETWORK === "mainnet"
+    ? "https://stellar.expert/explorer/public/contract"
+    : "https://stellar.expert/explorer/testnet/contract";
+
+  return (
+    <div style={{
+      background: "#0d0d0d", borderRadius: 12,
+      border: "1px solid #1a1a1a",
+      marginBottom: 16, overflow: "hidden",
+    }}>
+      {/* Header toggle */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", background: "none", border: "none", cursor: "pointer",
+          color: "#fff",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <FileCode2 size={14} color="#a78bfa" />
+          <span style={{ fontSize: 12, fontWeight: 600, color: "#a78bfa" }}>Smart Contract</span>
+          <span style={{
+            fontSize: 10, color: "#555",
+            background: "#161616", border: "1px solid #2a2a2a",
+            padding: "2px 8px", borderRadius: 100,
+          }}>
+            {NETWORK ?? "testnet"}
+          </span>
+        </div>
+        {open ? <ChevronUp size={14} color="#555" /> : <ChevronDown size={14} color="#555" />}
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 16px 16px", borderTop: "1px solid #1a1a1a" }}>
+          {/* Contract ID */}
+          <div style={{ marginTop: 14, marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>
+              Escrow Contract ID
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <code style={{
+                flex: 1, fontSize: 11, fontFamily: "monospace",
+                color: "#a78bfa", background: "#111",
+                border: "1px solid #2a2a2a", borderRadius: 7,
+                padding: "7px 10px", wordBreak: "break-all",
+              }}>
+                {ESCROW_CONTRACT_ID || "Not configured"}
+              </code>
+              {ESCROW_CONTRACT_ID && (
+                <a
+                  href={`${explorerBase}/${ESCROW_CONTRACT_ID}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex", alignItems: "center", gap: 4,
+                    fontSize: 11, color: "#555", textDecoration: "none",
+                    padding: "7px 10px", borderRadius: 7,
+                    background: "#111", border: "1px solid #2a2a2a",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  <ExternalLink size={11} /> Explorer
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Source path */}
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 6 }}>
+              Source
+            </div>
+            <code style={{
+              display: "block", fontSize: 11, fontFamily: "monospace",
+              color: "#666", background: "#111",
+              border: "1px solid #1a1a1a", borderRadius: 7,
+              padding: "7px 10px",
+            }}>
+              contracts/escrow_contract/src/lib.rs
+            </code>
+          </div>
+
+          {/* Functions */}
+          <div>
+            <div style={{ fontSize: 10, color: "#555", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 8 }}>
+              Contract Functions
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+              {CONTRACT_FUNCTIONS.map(fn => (
+                <div key={fn.name} style={{
+                  display: "flex", alignItems: "flex-start", gap: 10,
+                  background: "#111", borderRadius: 7,
+                  border: "1px solid #1a1a1a", padding: "8px 10px",
+                }}>
+                  <code style={{ fontSize: 11, color: "#a78bfa", fontFamily: "monospace", whiteSpace: "nowrap", minWidth: 160 }}>
+                    {fn.name}
+                  </code>
+                  <span style={{ fontSize: 11, color: "#555", lineHeight: 1.5 }}>{fn.desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <p style={{ fontSize: 10, color: "#333", marginTop: 12, lineHeight: 1.6 }}>
+            Funds are held by the contract — not by StellarWork. Only on-chain actions (approve, dispute, timeout) can move them.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
