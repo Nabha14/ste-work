@@ -2,7 +2,7 @@
 
 > Milestone-based freelance escrow powered by Soroban smart contracts on Stellar.
 
-🔴 **[Live Demo → ste-work.vercel.app](https://ste-work.vercel.app)**
+🔴 **[Live Demo → ste-work.vercel.app](https://ste-work.vercel.app)** · 📋 **[User Feedback Form](https://forms.gle/rF1U7afEDLaPwTte8)**
 
 [![CI](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml/badge.svg)](https://github.com/Nabha14/ste-work/actions/workflows/ci.yml)
 
@@ -31,7 +31,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Admin panel | ✅ `/admin` — platform stats, all disputes, resolve on-chain |
 | User profile & reputation | ✅ `/profile` — WORK score, reputation badge, job history |
 | SEO & OG metadata | ✅ OpenGraph image, Twitter card, keywords, metadataBase |
-| 5+ users onboarded | 🎯 Target: share live link and onboard 5 real users |
+| 5+ users onboarded | 🎯 Share the live link · [Submit Feedback Form](https://forms.gle/rF1U7afEDLaPwTte8) |
 
 ---
 
