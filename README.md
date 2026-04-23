@@ -20,7 +20,22 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 
 ---
 
-## Checklist
+## Blue Belt — Level 5 Checklist
+
+| Requirement | Status |
+|---|---|
+| Deployed MVP on Stellar testnet | ✅ Live at [ste-work.vercel.app](https://ste-work.vercel.app) |
+| Real on-chain transactions | ✅ All actions signed via Freighter, submitted to Soroban RPC |
+| User onboarding flow | ✅ First-visit onboarding modal (Freighter → testnet XLM → first job) |
+| Dispute resolution UI | ✅ Dispute button, resolve modal with basis-point slider on Escrow page |
+| Admin panel | ✅ `/admin` — platform stats, all disputes, resolve on-chain |
+| User profile & reputation | ✅ `/profile` — WORK score, reputation badge, job history |
+| SEO & OG metadata | ✅ OpenGraph image, Twitter card, keywords, metadataBase |
+| 5+ users onboarded | 🎯 Target: share live link and onboard 5 real users |
+
+---
+
+## Green Belt — Level 4 Checklist
 
 | Requirement | Status |
 |---|---|
