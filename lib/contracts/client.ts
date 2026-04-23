@@ -317,6 +317,99 @@ export async function buildApproveMilestoneTx(
   return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
 }
 
+export async function buildDisputeMilestoneTx(
+  callerAddress: string,
+  jobId: bigint,
+  milestoneIndex: number,
+): Promise<string> {
+  const rpc = getRpc();
+  const account = await rpc.getAccount(callerAddress);
+  const contract = new Contract(ESCROW_CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "dispute_milestone",
+        nativeToScVal(Number(jobId),      { type: "u64" }),
+        nativeToScVal(milestoneIndex,      { type: "u32" }),
+        addressToScVal(callerAddress),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const simResult = await rpc.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation error: ${simResult.error}`);
+  }
+  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+}
+
+export async function buildResolveDisputeTx(
+  adminAddress: string,
+  jobId: bigint,
+  milestoneIndex: number,
+  freelancerBps: number, // 0–10000 basis points to freelancer
+): Promise<string> {
+  const rpc = getRpc();
+  const account = await rpc.getAccount(adminAddress);
+  const contract = new Contract(ESCROW_CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "resolve_dispute",
+        nativeToScVal(Number(jobId),       { type: "u64" }),
+        nativeToScVal(milestoneIndex,       { type: "u32" }),
+        nativeToScVal(freelancerBps,        { type: "u32" }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const simResult = await rpc.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation error: ${simResult.error}`);
+  }
+  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+}
+
+export async function buildClaimTimeoutTx(
+  freelancerAddress: string,
+  jobId: bigint,
+  milestoneIndex: number,
+): Promise<string> {
+  const rpc = getRpc();
+  const account = await rpc.getAccount(freelancerAddress);
+  const contract = new Contract(ESCROW_CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "claim_timeout",
+        nativeToScVal(Number(jobId),       { type: "u64" }),
+        nativeToScVal(milestoneIndex,       { type: "u32" }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const simResult = await rpc.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation error: ${simResult.error}`);
+  }
+  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+}
+
 // ── Submit signed tx ──────────────────────────────────────────────────────────
 
 export async function submitSignedTx(signedXdr: string): Promise<string> {
