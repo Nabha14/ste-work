@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { WalletProvider } from "@/lib/wallet-context";
 import Navbar from "@/components/layout/Navbar";
+import OnboardingModal from "@/components/ui/OnboardingModal";
 
 const inter = Inter({ subsets: ["latin"], display: "swap" });
 
@@ -17,6 +18,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={inter.className} style={{ background: "#0a0a0a", color: "#fff" }}>
         <WalletProvider>
           <Navbar />
+          <OnboardingModal />
           {children}
         </WalletProvider>
       </body>
