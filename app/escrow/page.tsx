@@ -18,7 +18,7 @@ import {
 import { formatAddress } from "@/lib/utils";
 import {
   Lock, CheckCircle2, Clock, AlertTriangle,
-  Loader2, AlertCircle, Scale, X,
+  Loader2, AlertCircle, Scale, X, ExternalLink,
 } from "lucide-react";
 
 const STROOPS = 10_000_000n;
@@ -37,6 +37,43 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   Approved:  <CheckCircle2 size={13} color="#22c55e" />,
   Disputed:  <AlertTriangle size={13} color="#e8323c" />,
 };
+
+// ── Deliverable Preview ───────────────────────────────────────────────────────
+
+function DeliverablePreview({ value }: { value: string }) {
+  const isUrl = /^https?:\/\//i.test(value);
+  const isIpfs = /^(Qm[1-9A-HJ-NP-Za-km-z]{44,}|baf[a-z0-9]{50,})/i.test(value);
+  const ipfsUrl = isIpfs ? `https://ipfs.io/ipfs/${value}` : null;
+  const href = isUrl ? value : ipfsUrl;
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "inline-flex", alignItems: "center", gap: 5,
+          marginTop: 4, fontSize: 11, color: "#e8323c",
+          textDecoration: "none", fontFamily: "monospace",
+          background: "rgba(232,50,60,0.08)",
+          border: "1px solid rgba(232,50,60,0.2)",
+          borderRadius: 6, padding: "3px 8px",
+          maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}
+      >
+        <ExternalLink size={10} style={{ flexShrink: 0 }} />
+        {isIpfs ? `ipfs://${value.slice(0, 20)}…` : value.length > 40 ? value.slice(0, 40) + "…" : value}
+      </a>
+    );
+  }
+
+  return (
+    <div style={{ fontSize: 10, color: "#555", marginTop: 2, fontFamily: "monospace" }}>
+      {value.length > 40 ? value.slice(0, 40) + "…" : value}
+    </div>
+  );
+}
 
 // ── Resolve Dispute Modal ─────────────────────────────────────────────────────
 
@@ -436,9 +473,7 @@ export default function Escrow() {
                               <div>
                                 <span style={{ fontSize: 13, fontWeight: 600 }}>{m.title}</span>
                                 {m.deliverable && (
-                                  <div style={{ fontSize: 10, color: "#555", marginTop: 2, fontFamily: "monospace" }}>
-                                    {m.deliverable.length > 40 ? m.deliverable.slice(0, 40) + "…" : m.deliverable}
-                                  </div>
+                                  <DeliverablePreview value={m.deliverable} />
                                 )}
                                 {m.deadline > 0n && (
                                   <div style={{ fontSize: 10, color: isTimedOut ? "#e8323c" : "#444", marginTop: 2 }}>
