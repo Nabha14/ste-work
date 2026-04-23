@@ -31,7 +31,32 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Admin panel | ✅ `/admin` — platform stats, all disputes, resolve on-chain |
 | User profile & reputation | ✅ `/profile` — WORK score, reputation badge, job history |
 | SEO & OG metadata | ✅ OpenGraph image, Twitter card, keywords, metadataBase |
-| 5+ users onboarded | 🎯 Share the live link · [Submit Feedback Form](https://forms.gle/rF1U7afEDLaPwTte8) |
+| 5+ users onboarded | ✅ 5 users onboarded · [Feedback Form](https://forms.gle/rF1U7afEDLaPwTte8) · [View Responses](https://docs.google.com/spreadsheets/d/1OZ0SbeZdSnzPAKeN_SpHhPx5mpppctxkoUVRPD1NQIo/edit?usp=sharing) |
+
+---
+
+## User Feedback — 5 Onboarded Users
+
+📊 **[Full Responses Spreadsheet](https://docs.google.com/spreadsheets/d/1OZ0SbeZdSnzPAKeN_SpHhPx5mpppctxkoUVRPD1NQIo/edit?usp=sharing)**
+
+| Name | Wallet | UX Score | Understood? | Liked | Feature Request | Bug Reported |
+|---|---|---|---|---|---|---|
+| Nabha Pote | `GAZ27S...KV44` | 10/10 | Yes | UI is nice | More description about job details & company info | None |
+| Om Ozarkar | `GCYXWP...CCZBK` | 8/10 | Yes | Smooth process | Filter jobs by budget, milestone count, status | Stale wallet session |
+| Kartik Botre | `GDNQNN...AZFNJ` | 5/10 | Yes | — | None | None |
+| Vaishnavi Deore | `GBKLRB...KU65S` | 9/10 | Yes | — | Deliverable link preview | Own jobs mixed in open list |
+| Subodh Ingle | `GDK6LO...YQ5C7` | 6/10 | Yes | Easy job application | Public shareable profile page | None |
+
+### Feedback-Driven Changes
+
+| Change | Type | Commit |
+|---|---|---|
+| Job detail expansion — full description, client address, company info, milestone breakdown | Feature | `c704030` |
+| Filter jobs by budget range, milestone count, status + sort dropdown | Feature | `c704030` |
+| Deliverable link preview — clickable URL/IPFS on escrow page | Feature | `80e6f2c` |
+| Public profile `/profile/[address]` — shareable, no wallet required | Feature | `e3360b7` |
+| Fix stale wallet session — verify Freighter on restore | Bug Fix | `3b61b30` |
+| Own jobs separated into "My Postings" section | Bug Fix | `c704030` |
 
 ---
 
