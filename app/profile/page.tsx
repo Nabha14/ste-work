@@ -14,7 +14,7 @@ import { formatAddress } from "@/lib/utils";
 import {
   Star, Briefcase, CheckCircle2, Clock,
   Coins, Copy, ExternalLink, Loader2, AlertCircle,
-  Shield, TrendingUp,
+  Shield, TrendingUp, Share2,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -149,6 +149,16 @@ export default function Profile() {
                         <ExternalLink size={13} />
                       </a>
                     </div>
+                    <Link href={`/profile/${address}`} style={{
+                      display: "inline-flex", alignItems: "center", gap: 5,
+                      marginTop: 8, fontSize: 11, color: "#a78bfa",
+                      textDecoration: "none",
+                      background: "rgba(167,139,250,0.08)",
+                      border: "1px solid rgba(167,139,250,0.2)",
+                      borderRadius: 6, padding: "3px 8px",
+                    }}>
+                      <Share2 size={10} /> Share public profile
+                    </Link>
                   </div>
                 </div>
 
