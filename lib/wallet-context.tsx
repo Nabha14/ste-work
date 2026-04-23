@@ -33,10 +33,32 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
   const [address, setAddress]           = useState<string | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  // Restore session
+  // Restore session — verify Freighter still has the same account before trusting localStorage
   useEffect(() => {
     const saved = localStorage.getItem("sw_wallet");
-    if (saved) setAddress(saved);
+    if (!saved) return;
+
+    // Silently verify the saved address still matches Freighter's current account
+    (async () => {
+      try {
+        const connected = await freighterIsConnected();
+        if (!connected) {
+          // Freighter not available or locked — clear stale session
+          localStorage.removeItem("sw_wallet");
+          return;
+        }
+        const result = await getAddress();
+        if (result.error || result.address !== saved) {
+          // Account changed or error — clear stale session
+          localStorage.removeItem("sw_wallet");
+          return;
+        }
+        setAddress(saved);
+      } catch {
+        // If anything fails, clear the stale session rather than showing wrong address
+        localStorage.removeItem("sw_wallet");
+      }
+    })();
   }, []);
 
   const connect = useCallback(async () => {
