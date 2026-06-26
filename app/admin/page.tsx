@@ -7,8 +7,6 @@ import { useWallet } from "@/lib/wallet-context";
 import {
   listJobs,
   getWorkTokenSupply,
-  buildResolveDisputeTx,
-  submitSignedTx,
   type Job,
 } from "@/lib/contracts/client";
 import { formatAddress } from "@/lib/utils";
@@ -16,107 +14,10 @@ import {
   Shield, Scale, AlertTriangle, CheckCircle2,
   Briefcase, Coins, Loader2, AlertCircle, X,
 } from "lucide-react";
+import ResolveDisputeModal from "@/components/ui/ResolveDisputeModal";
 
 const STROOPS = 10_000_000n;
 function xlm(s: bigint) { return (Number(s) / Number(STROOPS)).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
-
-// ── Resolve Modal (inline) ────────────────────────────────────────────────────
-
-function ResolveModal({
-  job, milestoneIndex, onClose, onResolved, signTransaction, address,
-}: {
-  job: Job; milestoneIndex: number;
-  onClose: () => void; onResolved: () => void;
-  signTransaction: (xdr: string) => Promise<string>; address: string;
-}) {
-  const m = job.milestones[milestoneIndex];
-  const [pct, setPct] = useState(50);
-  const [pending, setPending] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
-
-  const freelancerXlm = (Number(m.amount) / 1e7 * pct / 100).toFixed(2);
-  const clientXlm = (Number(m.amount) / 1e7 * (100 - pct) / 100).toFixed(2);
-
-  const resolve = async () => {
-    setPending(true); setErr(null);
-    try {
-      const bps = Math.round(pct * 100);
-      const xdrTx = await buildResolveDisputeTx(address, job.id, milestoneIndex, bps);
-      const signed = await signTransaction(xdrTx);
-      await submitSignedTx(signed);
-      onResolved();
-    } catch (e: any) { setErr(e.message); }
-    finally { setPending(false); }
-  };
-
-  return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 100,
-      background: "rgba(0,0,0,0.85)", backdropFilter: "blur(4px)",
-      display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
-    }}>
-      <div style={{ background: "#111", borderRadius: 20, border: "1px solid #2a2a2a", width: "100%", maxWidth: 460, padding: 32 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
-          <div>
-            <h2 style={{ fontSize: 16, fontWeight: 800 }}>Resolve Dispute</h2>
-            <p style={{ fontSize: 11, color: "#555" }}>Job #{String(job.id)} · {m.title}</p>
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#555" }}><X size={18} /></button>
-        </div>
-
-        <div style={{ background: "#0d0d0d", borderRadius: 10, border: "1px solid #1a1a1a", padding: "14px 18px", marginBottom: 20 }}>
-          <div style={{ fontSize: 11, color: "#555", marginBottom: 4 }}>Disputed amount</div>
-          <div style={{ fontSize: 22, fontWeight: 800 }}>{xlm(m.amount)} XLM</div>
-          <div style={{ fontSize: 11, color: "#444", marginTop: 4 }}>
-            Client: {formatAddress(job.client)} · Freelancer: {job.freelancer ? formatAddress(job.freelancer) : "—"}
-          </div>
-        </div>
-
-        <div style={{ marginBottom: 20 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, color: "#666", marginBottom: 10 }}>
-            <span>Freelancer gets</span><span>Client gets</span>
-          </div>
-          <input type="range" min={0} max={100} step={5} value={pct}
-            onChange={e => setPct(Number(e.target.value))}
-            style={{ width: "100%", accentColor: "#e8323c", cursor: "pointer" }} />
-          <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-            <div style={{ flex: 1, background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.2)", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#22c55e" }}>{freelancerXlm} XLM</div>
-              <div style={{ fontSize: 11, color: "#555" }}>Freelancer ({pct}%)</div>
-            </div>
-            <div style={{ flex: 1, background: "rgba(232,50,60,0.1)", border: "1px solid rgba(232,50,60,0.2)", borderRadius: 10, padding: "10px 14px", textAlign: "center" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "#e8323c" }}>{clientXlm} XLM</div>
-              <div style={{ fontSize: 11, color: "#555" }}>Client ({100 - pct}%)</div>
-            </div>
-          </div>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-          {[{ l: "Full to Freelancer", p: 100 }, { l: "50 / 50", p: 50 }, { l: "Full to Client", p: 0 }].map(({ l, p }) => (
-            <button key={p} onClick={() => setPct(p)} style={{
-              flex: 1, padding: "7px 0", borderRadius: 8, cursor: "pointer",
-              border: `1px solid ${pct === p ? "#e8323c" : "#2a2a2a"}`,
-              background: pct === p ? "rgba(232,50,60,0.1)" : "#0d0d0d",
-              color: pct === p ? "#e8323c" : "#555", fontSize: 11, fontWeight: 600,
-            }}>{l}</button>
-          ))}
-        </div>
-
-        {err && <div style={{ background: "rgba(232,50,60,0.08)", border: "1px solid rgba(232,50,60,0.2)", borderRadius: 10, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: "#e8323c" }}>{err}</div>}
-
-        <button onClick={resolve} disabled={pending} style={{
-          width: "100%", padding: "12px 0", borderRadius: 10,
-          background: "#e8323c", border: "none", fontSize: 14, fontWeight: 700, color: "#fff",
-          cursor: pending ? "not-allowed" : "pointer", opacity: pending ? 0.6 : 1,
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-        }}>
-          {pending && <Loader2 size={14} />}
-          {pending ? "Submitting..." : "Resolve On-Chain"}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
@@ -387,9 +288,13 @@ export default function AdminPanel() {
 
       {/* Resolve Modal */}
       {resolveTarget && address && (
-        <ResolveModal
-          job={resolveTarget.job}
+        <ResolveDisputeModal
+          jobId={resolveTarget.job.id}
           milestoneIndex={resolveTarget.milestoneIndex}
+          milestoneTitle={resolveTarget.job.milestones[resolveTarget.milestoneIndex].title}
+          milestoneAmount={resolveTarget.job.milestones[resolveTarget.milestoneIndex].amount}
+          clientAddress={resolveTarget.job.client}
+          freelancerAddress={resolveTarget.job.freelancer}
           onClose={() => setResolveTarget(null)}
           onResolved={() => { setResolveTarget(null); load(); }}
           signTransaction={signTransaction}
