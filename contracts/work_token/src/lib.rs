@@ -113,4 +113,22 @@ impl WorkToken {
             .instance()
             .set(&DataKey::EscrowContract, &new_escrow);
     }
+
+    // ── Non-Transferable SEP-41 Compliance Methods ─────────────────────────
+
+    pub fn transfer(_env: Env, _from: Address, _to: Address, _amount: i128) {
+        panic!("WORK reputation tokens are soulbound and non-transferable");
+    }
+
+    pub fn transfer_from(_env: Env, _spender: Address, _from: Address, _to: Address, _amount: i128) {
+        panic!("WORK reputation tokens are soulbound and non-transferable");
+    }
+
+    pub fn approve(_env: Env, _from: Address, _spender: Address, _amount: i128, _expiration_ledger: u32) {
+        panic!("WORK reputation tokens are soulbound and non-transferable");
+    }
+
+    pub fn allowance(_env: Env, _from: Address, _spender: Address) -> i128 {
+        0
+    }
 }
