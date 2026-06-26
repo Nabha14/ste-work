@@ -27,7 +27,7 @@ export function getRpc() {
 
 // ── Types mirroring the Rust structs ─────────────────────────────────────────
 
-export type MilestoneStatus = "Locked" | "Submitted" | "Approved" | "Disputed";
+export type MilestoneStatus = "Locked" | "Submitted" | "Approved" | "Disputed" | "Refunded";
 
 export interface Milestone {
   title: string;
@@ -35,6 +35,7 @@ export interface Milestone {
   status: MilestoneStatus;
   deliverable: string;
   deadline: bigint;
+  review_deadline: bigint;
 }
 
 export interface Job {
@@ -87,6 +88,7 @@ function scValToJob(val: xdr.ScVal): Job {
         status:      parseStatus(ms.status),
         deliverable: ms.deliverable as string,
         deadline:    toBigInt(ms.deadline),
+        review_deadline: toBigInt(ms.review_deadline),
       };
     }),
     created_at:  toBigInt(map.created_at),
@@ -398,6 +400,64 @@ export async function buildClaimTimeoutTx(
         "claim_timeout",
         nativeToScVal(Number(jobId),       { type: "u64" }),
         nativeToScVal(milestoneIndex,       { type: "u32" }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const simResult = await rpc.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation error: ${simResult.error}`);
+  }
+  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+}
+
+export async function buildCancelJobTx(
+  clientAddress: string,
+  jobId: bigint,
+): Promise<string> {
+  const rpc = getRpc();
+  const account = await rpc.getAccount(clientAddress);
+  const contract = new Contract(ESCROW_CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "cancel_job",
+        nativeToScVal(Number(jobId), { type: "u64" }),
+      ),
+    )
+    .setTimeout(30)
+    .build();
+
+  const simResult = await rpc.simulateTransaction(tx);
+  if (SorobanRpc.Api.isSimulationError(simResult)) {
+    throw new Error(`Simulation error: ${simResult.error}`);
+  }
+  return SorobanRpc.assembleTransaction(tx, simResult).build().toXDR();
+}
+
+export async function buildRefundMilestoneTx(
+  clientAddress: string,
+  jobId: bigint,
+  milestoneIndex: number,
+): Promise<string> {
+  const rpc = getRpc();
+  const account = await rpc.getAccount(clientAddress);
+  const contract = new Contract(ESCROW_CONTRACT_ID);
+
+  const tx = new TransactionBuilder(account, {
+    fee: BASE_FEE,
+    networkPassphrase: NETWORK_PASSPHRASE,
+  })
+    .addOperation(
+      contract.call(
+        "refund_milestone",
+        nativeToScVal(Number(jobId), { type: "u64" }),
+        nativeToScVal(milestoneIndex, { type: "u32" }),
       ),
     )
     .setTimeout(30)
