@@ -61,6 +61,36 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     })();
   }, []);
 
+  // Listen for wallet/account changes reactively by polling Freighter's active address
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      try {
+        const connected = await freighterIsConnected();
+        if (connected) {
+          const result = await getAddress();
+          if (!result.error && result.address !== address) {
+            // Address changed inside extension! Update state & localStorage reactively
+            if (result.address) {
+              setAddress(result.address);
+              localStorage.setItem("sw_wallet", result.address);
+            } else {
+              setAddress(null);
+              localStorage.removeItem("sw_wallet");
+            }
+          }
+        } else if (address !== null) {
+          // Freighter was locked or disconnected
+          setAddress(null);
+          localStorage.removeItem("sw_wallet");
+        }
+      } catch (err) {
+        console.error("Wallet polling error:", err);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [address]);
+
   const connect = useCallback(async () => {
     setIsConnecting(true);
     try {
