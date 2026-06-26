@@ -19,16 +19,18 @@ pub enum MilestoneStatus {
     Submitted,
     Approved,
     Disputed,
+    Refunded,
 }
 
 #[contracttype]
 #[derive(Clone)]
 pub struct Milestone {
-    pub title:       String,
-    pub amount:      i128,
-    pub status:      MilestoneStatus,
-    pub deliverable: String, // IPFS hash or description
-    pub deadline:    u64,    // Unix timestamp; 0 = no deadline
+    pub title:           String,
+    pub amount:          i128,
+    pub status:          MilestoneStatus,
+    pub deliverable:     String, // IPFS hash or description
+    pub deadline:        u64,    // Unix timestamp; 0 = no deadline
+    pub review_deadline: u64,    // Unix timestamp; 0 = no submission/deadline
 }
 
 #[contracttype]
@@ -52,6 +54,7 @@ pub enum DataKey {
     JobCount,
     WorkToken,
     Admin,
+    XlmToken,
 }
 
 // ── Contract ──────────────────────────────────────────────────────────────────
@@ -61,13 +64,14 @@ pub struct EscrowContract;
 
 #[contractimpl]
 impl EscrowContract {
-    /// Initialize with admin and work_token contract address.
-    pub fn initialize(env: Env, admin: Address, work_token: Address) {
+    /// Initialize with admin, work_token, and allowed payment token (XLM) contract address.
+    pub fn initialize(env: Env, admin: Address, work_token: Address, xlm_token: Address) {
         if env.storage().instance().has(&DataKey::Admin) {
             panic!("already initialized");
         }
         env.storage().instance().set(&DataKey::Admin, &admin);
         env.storage().instance().set(&DataKey::WorkToken, &work_token);
+        env.storage().instance().set(&DataKey::XlmToken, &xlm_token);
         env.storage().instance().set(&DataKey::JobCount, &0_u64);
     }
 
@@ -88,6 +92,14 @@ impl EscrowContract {
     ) -> u64 {
         client.require_auth();
 
+        // Enforce whitelisted token (e.g. Native XLM)
+        let allowed_xlm: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::XlmToken)
+            .expect("xlm token not set");
+        assert!(xlm_token == allowed_xlm, "unsupported token");
+
         let n = milestone_titles.len();
         assert!(n > 0, "need at least one milestone");
         assert!(n == milestone_amounts.len(), "titles/amounts mismatch");
@@ -104,11 +116,12 @@ impl EscrowContract {
         let mut milestones: Vec<Milestone> = Vec::new(&env);
         for i in 0..n {
             milestones.push_back(Milestone {
-                title:       milestone_titles.get(i).unwrap(),
-                amount:      milestone_amounts.get(i).unwrap(),
-                status:      MilestoneStatus::Locked,
-                deliverable: String::from_str(&env, ""),
-                deadline:    milestone_deadlines.get(i).unwrap(),
+                title:           milestone_titles.get(i).unwrap(),
+                amount:          milestone_amounts.get(i).unwrap(),
+                status:          MilestoneStatus::Locked,
+                deliverable:     String::from_str(&env, ""),
+                deadline:        milestone_deadlines.get(i).unwrap(),
+                review_deadline: 0,
             });
         }
 
@@ -160,6 +173,80 @@ impl EscrowContract {
         env.events().publish((symbol_short!("accepted"), job_id), freelancer);
     }
 
+    /// Client cancels an open job (before any freelancer has accepted).
+    /// Refunds the entire locked balance to the client.
+    pub fn cancel_job(env: Env, job_id: u64) {
+        let mut job: Job = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Job(job_id))
+            .expect("job not found");
+
+        job.client.require_auth();
+        assert!(job.is_open, "job is not open or already accepted");
+        assert!(job.freelancer.is_none(), "freelancer already assigned");
+
+        // Refund total amount to client
+        let token_client = token::Client::new(&env, &job.token);
+        token_client.transfer(
+            &env.current_contract_address(),
+            &job.client,
+            &job.total,
+        );
+
+        // Update all milestones to Refunded
+        let mut updated_milestones: Vec<Milestone> = Vec::new(&env);
+        for milestone in job.milestones.iter() {
+            let mut m = milestone;
+            m.status = MilestoneStatus::Refunded;
+            updated_milestones.push_back(m);
+        }
+        job.milestones = updated_milestones;
+        job.is_open = false;
+
+        env.storage().persistent().set(&DataKey::Job(job_id), &job);
+        env.events().publish((symbol_short!("cancelled"), job_id), job.client.clone());
+    }
+
+    /// Client refunds a single milestone if the freelancer has missed the completion deadline and hasn't submitted yet.
+    pub fn refund_milestone(env: Env, job_id: u64, milestone_index: u32) {
+        let mut job: Job = env
+            .storage()
+            .persistent()
+            .get(&DataKey::Job(job_id))
+            .expect("job not found");
+
+        job.client.require_auth();
+
+        let mut milestone = job.milestones.get(milestone_index).expect("bad index");
+        assert!(
+            milestone.status == MilestoneStatus::Locked,
+            "milestone must be Locked to refund"
+        );
+        assert!(milestone.deadline > 0, "no completion deadline set");
+        assert!(
+            env.ledger().timestamp() > milestone.deadline,
+            "completion deadline not passed yet"
+        );
+
+        // Refund milestone amount to client
+        let token_client = token::Client::new(&env, &job.token);
+        token_client.transfer(
+            &env.current_contract_address(),
+            &job.client,
+            &milestone.amount,
+        );
+
+        milestone.status = MilestoneStatus::Refunded;
+        job.milestones.set(milestone_index, milestone);
+
+        env.storage().persistent().set(&DataKey::Job(job_id), &job);
+        env.events().publish(
+            (symbol_short!("refunded"), job_id),
+            milestone_index,
+        );
+    }
+
     /// Freelancer submits a milestone with a deliverable hash.
     pub fn submit_milestone(
         env: Env,
@@ -184,6 +271,7 @@ impl EscrowContract {
 
         milestone.status = MilestoneStatus::Submitted;
         milestone.deliverable = deliverable;
+        milestone.review_deadline = env.ledger().timestamp() + 259200; // 3 days review period
         job.milestones.set(milestone_index, milestone);
 
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -333,13 +421,27 @@ impl EscrowContract {
         job.milestones.set(milestone_index, milestone);
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
 
+        // ── Mint reputation tokens proportionally for the freelancer ───────
+        if freelancer_amount > 0 {
+            let work_token_addr: Address = env
+                .storage()
+                .instance()
+                .get(&DataKey::WorkToken)
+                .expect("work token not set");
+
+            let work_amount: i128 = (freelancer_amount / 100_0000000).max(1);
+
+            let work_token_client = work_token::Client::new(&env, &work_token_addr);
+            work_token_client.mint(&freelancer, &work_amount);
+        }
+
         env.events().publish(
             (symbol_short!("resolved"), job_id),
             freelancer_bps,
         );
     }
 
-    /// Auto-release if deadline passed and client hasn't responded.
+    /// Auto-release if review deadline passed and client hasn't responded.
     pub fn claim_timeout(env: Env, job_id: u64, milestone_index: u32) {
         let mut job: Job = env
             .storage()
@@ -355,10 +457,10 @@ impl EscrowContract {
             milestone.status == MilestoneStatus::Submitted,
             "not submitted"
         );
-        assert!(milestone.deadline > 0, "no deadline set");
+        assert!(milestone.review_deadline > 0, "no review deadline set");
         assert!(
-            env.ledger().timestamp() > milestone.deadline,
-            "deadline not passed"
+            env.ledger().timestamp() > milestone.review_deadline,
+            "review deadline not passed"
         );
 
         let token_client = token::Client::new(&env, &job.token);
@@ -369,8 +471,22 @@ impl EscrowContract {
         );
 
         milestone.status = MilestoneStatus::Approved;
-        job.milestones.set(milestone_index, milestone);
+        job.milestones.set(milestone_index, milestone.clone());
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
+
+        // ── Inter-contract call: mint WORK reputation tokens ──────────────
+        let work_token_addr: Address = env
+            .storage()
+            .instance()
+            .get(&DataKey::WorkToken)
+            .expect("work token not set");
+
+        // 1 WORK token per 100 XLM (stroops: 1 XLM = 10_000_000 stroops)
+        let work_amount: i128 = (milestone.amount / 100_0000000).max(1);
+
+        // Call WorkToken.mint — this is the inter-contract call
+        let work_token_client = work_token::Client::new(&env, &work_token_addr);
+        work_token_client.mint(&freelancer, &work_amount);
 
         env.events().publish(
             (symbol_short!("timeout"), job_id),

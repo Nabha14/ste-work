@@ -45,12 +45,14 @@ fn setup() -> (Env, Address, Address, Address, Address, Address) {
     // Deploy stub work token
     let work_token_id = env.register(stub_work_token::StubWorkToken, ());
 
+    // Deploy XLM-like token
+    let xlm_id = env.register_stellar_asset_contract_v2(admin.clone()).address();
+
     // Deploy escrow
     let escrow_id = env.register(EscrowContract, ());
-    EscrowContractClient::new(&env, &escrow_id).initialize(&admin, &work_token_id);
+    EscrowContractClient::new(&env, &escrow_id).initialize(&admin, &work_token_id, &xlm_id);
 
-    // Deploy XLM-like token and fund client
-    let xlm_id = env.register_stellar_asset_contract_v2(admin.clone()).address();
+    // Fund client
     token::StellarAssetClient::new(&env, &xlm_id).mint(&client, &1_000_000_0000000i128);
 
     (env, escrow_id, xlm_id, admin, client, freelancer)
@@ -82,7 +84,7 @@ fn test_initialize_twice_panics() {
     let (env, escrow_id, _, _, _, _) = setup();
     let work = Address::generate(&env);
     let admin = Address::generate(&env);
-    EscrowContractClient::new(&env, &escrow_id).initialize(&admin, &work);
+    EscrowContractClient::new(&env, &escrow_id).initialize(&admin, &work, &work);
 }
 
 // ── post_job ──────────────────────────────────────────────────────────────────
@@ -177,6 +179,20 @@ fn test_post_job_mismatched_lengths_panics() {
         &soroban_sdk::vec![&env, s(&env, "M1"), s(&env, "M2")],
         &soroban_sdk::vec![&env, 100_0000000i128],
         &soroban_sdk::vec![&env, 0u64, 0u64],
+    );
+}
+
+#[test]
+#[should_panic(expected = "unsupported token")]
+fn test_post_job_unsupported_token_panics() {
+    let (env, escrow_id, _, _, client, _) = setup();
+    let fake_token = Address::generate(&env);
+    EscrowContractClient::new(&env, &escrow_id).post_job(
+        &client, &fake_token,
+        &s(&env, "Bad"), &s(&env, "desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 100_0000000i128],
+        &soroban_sdk::vec![&env, 0u64],
     );
 }
 
@@ -459,7 +475,8 @@ fn test_claim_timeout_releases_after_deadline() {
     c.accept_job(&id, &freelancer);
     c.submit_milestone(&id, &0u32, &s(&env, "done"));
 
-    set_time(&env, deadline + 1);
+    // review deadline is set to now + 259200 (1_259_200)
+    set_time(&env, 1_259_201);
 
     let before = xlm.balance(&freelancer);
     c.claim_timeout(&id, &0u32);
@@ -467,7 +484,7 @@ fn test_claim_timeout_releases_after_deadline() {
 }
 
 #[test]
-#[should_panic(expected = "deadline not passed")]
+#[should_panic(expected = "review deadline not passed")]
 fn test_claim_timeout_before_deadline_panics() {
     let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
     let c   = EscrowContractClient::new(&env, &escrow_id);
@@ -484,18 +501,105 @@ fn test_claim_timeout_before_deadline_panics() {
 
     c.accept_job(&id, &freelancer);
     c.submit_milestone(&id, &0u32, &s(&env, "done"));
+    // review_deadline is 1_259_200. Set time to 1_259_199.
+    set_time(&env, 1_259_199);
     c.claim_timeout(&id, &0u32); // still before deadline
 }
 
 #[test]
-#[should_panic(expected = "no deadline set")]
-fn test_claim_timeout_no_deadline_panics() {
+#[should_panic(expected = "not submitted")]
+fn test_claim_timeout_not_submitted_panics() {
     let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
     let c  = EscrowContractClient::new(&env, &escrow_id);
     let id = post_simple_job(&env, &escrow_id, &xlm_id, &client); // deadline = 0
     c.accept_job(&id, &freelancer);
-    c.submit_milestone(&id, &0u32, &s(&env, "done"));
     c.claim_timeout(&id, &0u32);
+}
+
+// ── cancel_job & refund_milestone ─────────────────────────────────────────────
+
+#[test]
+fn test_cancel_job_happy_path() {
+    let (env, escrow_id, xlm_id, _, client, _) = setup();
+    let c = EscrowContractClient::new(&env, &escrow_id);
+    let id = post_simple_job(&env, &escrow_id, &xlm_id, &client);
+    
+    let xlm = token::Client::new(&env, &xlm_id);
+    let balance_before = xlm.balance(&client);
+
+    c.cancel_job(&id);
+
+    let balance_after = xlm.balance(&client);
+    assert_eq!(balance_after - balance_before, 100_0000000i128); // refunded
+    let job = c.get_job(&id);
+    assert_eq!(job.is_open, false);
+    assert_eq!(job.milestones.get(0).unwrap().status, MilestoneStatus::Refunded);
+}
+
+#[test]
+#[should_panic(expected = "job is not open or already accepted")]
+fn test_cancel_job_already_accepted_panics() {
+    let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
+    let c = EscrowContractClient::new(&env, &escrow_id);
+    let id = post_simple_job(&env, &escrow_id, &xlm_id, &client);
+    c.accept_job(&id, &freelancer);
+    c.cancel_job(&id); // fails
+}
+
+#[test]
+fn test_refund_milestone_happy_path() {
+    let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
+    let c = EscrowContractClient::new(&env, &escrow_id);
+    let xlm = token::Client::new(&env, &xlm_id);
+
+    let now = 1_000_000u64;
+    let deadline = now + 86400;
+    set_time(&env, now);
+
+    let id = c.post_job(
+        &client,
+        &xlm_id,
+        &s(&env, "Job"),
+        &s(&env, "Desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 100_0000000i128],
+        &soroban_sdk::vec![&env, deadline],
+    );
+    c.accept_job(&id, &freelancer);
+
+    set_time(&env, deadline + 1);
+
+    let balance_before = xlm.balance(&client);
+    c.refund_milestone(&id, &0u32);
+
+    let balance_after = xlm.balance(&client);
+    assert_eq!(balance_after - balance_before, 100_0000000i128);
+    let job = c.get_job(&id);
+    assert_eq!(job.milestones.get(0).unwrap().status, MilestoneStatus::Refunded);
+}
+
+#[test]
+#[should_panic(expected = "completion deadline not passed yet")]
+fn test_refund_milestone_before_deadline_panics() {
+    let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
+    let c = EscrowContractClient::new(&env, &escrow_id);
+
+    let now = 1_000_000u64;
+    let deadline = now + 86400;
+    set_time(&env, now);
+
+    let id = c.post_job(
+        &client,
+        &xlm_id,
+        &s(&env, "Job"),
+        &s(&env, "Desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 100_0000000i128],
+        &soroban_sdk::vec![&env, deadline],
+    );
+    c.accept_job(&id, &freelancer);
+
+    c.refund_milestone(&id, &0u32); // fails, deadline not passed
 }
 
 // ── list_jobs ─────────────────────────────────────────────────────────────────

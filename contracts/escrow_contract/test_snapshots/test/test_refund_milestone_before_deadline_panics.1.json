@@ -67,15 +67,15 @@
                   "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
                 },
                 {
-                  "string": "Test Job"
+                  "string": "Job"
                 },
                 {
-                  "string": "A test job description"
+                  "string": "Desc"
                 },
                 {
                   "vec": [
                     {
-                      "string": "Milestone 1"
+                      "string": "M1"
                     }
                   ]
                 },
@@ -92,7 +92,7 @@
                 {
                   "vec": [
                     {
-                      "u64": 0
+                      "u64": 1086400
                     }
                   ]
                 }
@@ -129,153 +129,23 @@
     ],
     [
       [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
         {
           "function": {
             "contract_fn": {
               "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-              "function_name": "post_job",
+              "function_name": "accept_job",
               "args": [
                 {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
+                  "u64": 1
                 },
                 {
-                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
-                },
-                {
-                  "string": "Test Job"
-                },
-                {
-                  "string": "A test job description"
-                },
-                {
-                  "vec": [
-                    {
-                      "string": "Milestone 1"
-                    }
-                  ]
-                },
-                {
-                  "vec": [
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 1000000000
-                      }
-                    }
-                  ]
-                },
-                {
-                  "vec": [
-                    {
-                      "u64": 0
-                    }
-                  ]
+                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
                 }
               ]
             }
           },
-          "sub_invocations": [
-            {
-              "function": {
-                "contract_fn": {
-                  "contract_address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG",
-                  "function_name": "transfer",
-                  "args": [
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                    },
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                    },
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 1000000000
-                      }
-                    }
-                  ]
-                }
-              },
-              "sub_invocations": []
-            }
-          ]
-        }
-      ]
-    ],
-    [
-      [
-        "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-        {
-          "function": {
-            "contract_fn": {
-              "contract_address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-              "function_name": "post_job",
-              "args": [
-                {
-                  "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                },
-                {
-                  "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
-                },
-                {
-                  "string": "Test Job"
-                },
-                {
-                  "string": "A test job description"
-                },
-                {
-                  "vec": [
-                    {
-                      "string": "Milestone 1"
-                    }
-                  ]
-                },
-                {
-                  "vec": [
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 1000000000
-                      }
-                    }
-                  ]
-                },
-                {
-                  "vec": [
-                    {
-                      "u64": 0
-                    }
-                  ]
-                }
-              ]
-            }
-          },
-          "sub_invocations": [
-            {
-              "function": {
-                "contract_fn": {
-                  "contract_address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG",
-                  "function_name": "transfer",
-                  "args": [
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                    },
-                    {
-                      "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4"
-                    },
-                    {
-                      "i128": {
-                        "hi": 0,
-                        "lo": 1000000000
-                      }
-                    }
-                  ]
-                }
-              },
-              "sub_invocations": []
-            }
-          ]
+          "sub_invocations": []
         }
       ]
     ],
@@ -283,13 +153,13 @@
   ],
   "ledger": {
     "protocol_version": 22,
-    "sequence_number": 0,
-    "timestamp": 0,
+    "sequence_number": 1,
+    "timestamp": 1000000,
     "network_id": "0000000000000000000000000000000000000000000000000000000000000000",
-    "base_reserve": 0,
-    "min_persistent_entry_ttl": 4096,
+    "base_reserve": 10,
+    "min_persistent_entry_ttl": 100,
     "min_temp_entry_ttl": 16,
-    "max_entry_ttl": 6312000,
+    "max_entry_ttl": 10000000,
     "ledger_entries": [
       [
         {
@@ -415,46 +285,13 @@
             },
             "ext": "v0"
           },
-          6311999
+          10000000
         ]
       ],
       [
         {
           "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-            "key": {
-              "ledger_key_nonce": {
-                "nonce": 2032731177588607455
-              }
-            },
-            "durability": "temporary"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
-                "key": {
-                  "ledger_key_nonce": {
-                    "nonce": 2032731177588607455
-                  }
-                },
-                "durability": "temporary",
-                "val": "void"
-              }
-            },
-            "ext": "v0"
-          },
-          6311999
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
             "key": {
               "ledger_key_nonce": {
                 "nonce": 4837995959683129791
@@ -469,7 +306,7 @@
             "data": {
               "contract_data": {
                 "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4",
+                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M",
                 "key": {
                   "ledger_key_nonce": {
                     "nonce": 4837995959683129791
@@ -481,7 +318,7 @@
             },
             "ext": "v0"
           },
-          6311999
+          10000000
         ]
       ],
       [
@@ -566,7 +403,7 @@
                         "symbol": "created_at"
                       },
                       "val": {
-                        "u64": 0
+                        "u64": 1000000
                       }
                     },
                     {
@@ -574,14 +411,16 @@
                         "symbol": "description"
                       },
                       "val": {
-                        "string": "A test job description"
+                        "string": "Desc"
                       }
                     },
                     {
                       "key": {
                         "symbol": "freelancer"
                       },
-                      "val": "void"
+                      "val": {
+                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHK3M"
+                      }
                     },
                     {
                       "key": {
@@ -596,7 +435,7 @@
                         "symbol": "is_open"
                       },
                       "val": {
-                        "bool": true
+                        "bool": false
                       }
                     },
                     {
@@ -623,7 +462,7 @@
                                   "symbol": "deadline"
                                 },
                                 "val": {
-                                  "u64": 0
+                                  "u64": 1086400
                                 }
                               },
                               {
@@ -659,7 +498,7 @@
                                   "symbol": "title"
                                 },
                                 "val": {
-                                  "string": "Milestone 1"
+                                  "string": "M1"
                                 }
                               }
                             ]
@@ -672,7 +511,7 @@
                         "symbol": "title"
                       },
                       "val": {
-                        "string": "Test Job"
+                        "string": "Job"
                       }
                     },
                     {
@@ -700,381 +539,7 @@
             },
             "ext": "v0"
           },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "Job"
-                },
-                {
-                  "u64": 2
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "Job"
-                    },
-                    {
-                      "u64": 2
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "client"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "created_at"
-                      },
-                      "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "description"
-                      },
-                      "val": {
-                        "string": "A test job description"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "freelancer"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "id"
-                      },
-                      "val": {
-                        "u64": 2
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "is_open"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "milestones"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "map": [
-                              {
-                                "key": {
-                                  "symbol": "amount"
-                                },
-                                "val": {
-                                  "i128": {
-                                    "hi": 0,
-                                    "lo": 1000000000
-                                  }
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "deadline"
-                                },
-                                "val": {
-                                  "u64": 0
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "deliverable"
-                                },
-                                "val": {
-                                  "string": ""
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "review_deadline"
-                                },
-                                "val": {
-                                  "u64": 0
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "status"
-                                },
-                                "val": {
-                                  "vec": [
-                                    {
-                                      "symbol": "Locked"
-                                    }
-                                  ]
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "title"
-                                },
-                                "val": {
-                                  "string": "Milestone 1"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "title"
-                      },
-                      "val": {
-                        "string": "Test Job"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "token"
-                      },
-                      "val": {
-                        "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total"
-                      },
-                      "val": {
-                        "i128": {
-                          "hi": 0,
-                          "lo": 1000000000
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
-        ]
-      ],
-      [
-        {
-          "contract_data": {
-            "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-            "key": {
-              "vec": [
-                {
-                  "symbol": "Job"
-                },
-                {
-                  "u64": 3
-                }
-              ]
-            },
-            "durability": "persistent"
-          }
-        },
-        [
-          {
-            "last_modified_ledger_seq": 0,
-            "data": {
-              "contract_data": {
-                "ext": "v0",
-                "contract": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMDR4",
-                "key": {
-                  "vec": [
-                    {
-                      "symbol": "Job"
-                    },
-                    {
-                      "u64": 3
-                    }
-                  ]
-                },
-                "durability": "persistent",
-                "val": {
-                  "map": [
-                    {
-                      "key": {
-                        "symbol": "client"
-                      },
-                      "val": {
-                        "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAFCT4"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "created_at"
-                      },
-                      "val": {
-                        "u64": 0
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "description"
-                      },
-                      "val": {
-                        "string": "A test job description"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "freelancer"
-                      },
-                      "val": "void"
-                    },
-                    {
-                      "key": {
-                        "symbol": "id"
-                      },
-                      "val": {
-                        "u64": 3
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "is_open"
-                      },
-                      "val": {
-                        "bool": true
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "milestones"
-                      },
-                      "val": {
-                        "vec": [
-                          {
-                            "map": [
-                              {
-                                "key": {
-                                  "symbol": "amount"
-                                },
-                                "val": {
-                                  "i128": {
-                                    "hi": 0,
-                                    "lo": 1000000000
-                                  }
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "deadline"
-                                },
-                                "val": {
-                                  "u64": 0
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "deliverable"
-                                },
-                                "val": {
-                                  "string": ""
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "review_deadline"
-                                },
-                                "val": {
-                                  "u64": 0
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "status"
-                                },
-                                "val": {
-                                  "vec": [
-                                    {
-                                      "symbol": "Locked"
-                                    }
-                                  ]
-                                }
-                              },
-                              {
-                                "key": {
-                                  "symbol": "title"
-                                },
-                                "val": {
-                                  "string": "Milestone 1"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "title"
-                      },
-                      "val": {
-                        "string": "Test Job"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "token"
-                      },
-                      "val": {
-                        "address": "CDLDVFKHEZ2RVB3NG4UQA4VPD3TSHV6XMHXMHP2BSGCJ2IIWVTOHGDSG"
-                      }
-                    },
-                    {
-                      "key": {
-                        "symbol": "total"
-                      },
-                      "val": {
-                        "i128": {
-                          "hi": 0,
-                          "lo": 1000000000
-                        }
-                      }
-                    }
-                  ]
-                }
-              }
-            },
-            "ext": "v0"
-          },
-          4095
+          100
         ]
       ],
       [
@@ -1121,7 +586,7 @@
                           ]
                         },
                         "val": {
-                          "u64": 3
+                          "u64": 1
                         }
                       },
                       {
@@ -1202,7 +667,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 9997000000000
+                          "lo": 9999000000000
                         }
                       }
                     },
@@ -1275,7 +740,7 @@
                       "val": {
                         "i128": {
                           "hi": 0,
-                          "lo": 3000000000
+                          "lo": 1000000000
                         }
                       }
                     },
@@ -1301,7 +766,7 @@
             },
             "ext": "v0"
           },
-          518400
+          518401
         ]
       ],
       [
