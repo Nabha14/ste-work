@@ -58,6 +58,18 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Fix stale wallet session — verify Freighter on restore | Bug Fix | `3b61b30` |
 | Own jobs separated into "My Postings" section | Bug Fix | `c704030` |
 
+### Newly Added Features (Escrow & Reputation Upgrades)
+
+| Feature / Upgrade | Component | Type | Commit | Description |
+|---|---|---|---|---|
+| **Soulbound WORK Token** | Smart Contract | Compliance | `07c9193` | Restricts `transfer`, `transfer_from`, and `approve` methods of the `WorkToken` to enforce non-transferable reputation. |
+| **Whitelisted Payment Token** | Smart Contract | Security | `7fe021b` | Enforces that only the whitelisted Native XLM token address can be used for posting jobs. |
+| **Job Cancellation & Refunds** | Contract & Frontend | Feature | `7fe021b`, `18fcde0`, `a1f961e` | Enables clients to cancel open jobs (if unaccepted) and refund locked funds. |
+| **Overdue Milestone Refunds** | Contract & Frontend | Feature | `7fe021b`, `18fcde0`, `a1f961e` | Allows clients to reclaim milestone funds if the completion deadline is missed. |
+| **3-Day Review Window** | Smart Contract | Timing | `7fe021b` | Introduces a 259,200s review countdown upon milestone submission before timeout claim is valid. |
+| **Dispute Resolution UI Modal** | Frontend Component | Refactor | `a1f961e` | Modularized the dispute resolution popup into a separate reusable UI component. |
+| **Reactive Wallet State Polling** | Frontend Context | UX / Security | `0988659` | Periodically polls Freighter wallet address every 2s to detect locks/account swaps instantly. |
+
 ---
 
 ## Green Belt — Level 4 Checklist
@@ -69,7 +81,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Advanced contract patterns | ✅ Milestone state machine, dispute resolution, time-locked deadlines |
 | Production readiness | ✅ CI/CD via GitHub Actions, deployed to Stellar testnet |
 | Mobile responsive design | ✅ Fully responsive across all pages |
-| Contract tests | ✅ 45 unit tests (10 WorkToken + 35 EscrowContract) |
+| Contract tests | ✅ 50 unit tests (10 WorkToken + 40 EscrowContract) |
 
 ---
 
@@ -169,7 +181,7 @@ cd contracts
 stellar contract build
 ```
 
-### Run all tests (45 passing)
+### Run all tests (50 passing)
 
 ```bash
 cd contracts
@@ -178,7 +190,7 @@ cargo test --workspace
 
 Output:
 ```
-test result: ok. 35 passed; 0 failed  ← EscrowContract
+test result: ok. 40 passed; 0 failed  ← EscrowContract
 test result: ok. 10 passed; 0 failed  ← WorkToken
 ```
 
@@ -196,15 +208,17 @@ test result: ok. 10 passed; 0 failed  ← WorkToken
 - `test_mint_negative_panics`
 - `test_set_escrow_updates_minter`
 
-**EscrowContract (35 tests)**
+**EscrowContract (40 tests)**
 - Initialize, double-init guard
-- Post job: id, count, fund transfer, stored data, multi-milestone, validation panics
+- Post job: id, count, fund transfer, stored data, multi-milestone, validation panics, token whitelist verification
 - Accept job: assigns freelancer, double-accept guard, nonexistent job
-- Submit milestone: status change, deliverable stored, double-submit guard
+- Submit milestone: status change, deliverable stored, double-submit guard, review period settings
 - Approve milestone: payment release, status update, partial multi-milestone release
 - Dispute: status change, locked milestone guard, stranger auth guard
 - Resolve dispute: 100% freelancer, 100% client, 50/50 split, invalid bps, non-disputed guard
-- Claim timeout: releases after deadline, before-deadline guard, no-deadline guard
+- Claim timeout: releases after review deadline, before-deadline guard
+- Cancel job: client cancel open job, refund client, set status to refunded
+- Refund milestone: client refund milestone on deadline breach if not submitted
 - List jobs: empty, all, pagination
 - Full lifecycle integration test
 
