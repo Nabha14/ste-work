@@ -5,7 +5,7 @@
 
 use soroban_sdk::{
     contract, contractimpl, contracttype, symbol_short,
-    token, vec, Address, Env, String, Symbol, Vec,
+    token, Address, Env, String, Vec,
 };
 
 mod test;

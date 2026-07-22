@@ -5,8 +5,8 @@
 
 use super::*;
 use soroban_sdk::{
-    testutils::{Address as _, AuthorizedFunction, AuthorizedInvocation},
-    Address, Env, IntoVal,
+    testutils::Address as _,
+    Address, Env,
 };
 
 // ── helpers ───────────────────────────────────────────────────────────────────

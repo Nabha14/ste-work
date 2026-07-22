@@ -56,9 +56,6 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
 
-      - name: Install Stellar CLI
-        run: cargo install --locked stellar-cli --features opt
-
       - name: Cache Cargo registry
         uses: actions/cache@v4
         with:
@@ -69,21 +66,17 @@ jobs:
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('contracts/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-build-
 
-      - name: Build WorkToken
+      - name: Build Contracts (WASM)
         working-directory: contracts
-        run: stellar contract build --package work_token
-
-      - name: Build EscrowContract
-        working-directory: contracts
-        run: stellar contract build --package escrow_contract
+        run: cargo build --target wasm32-unknown-unknown --release
 
       - name: Upload WASM artifacts
         uses: actions/upload-artifact@v4
         with:
           name: contract-wasm
           path: |
-            contracts/target/wasm32v1-none/release/work_token.wasm
-            contracts/target/wasm32v1-none/release/escrow_contract.wasm
+            contracts/target/wasm32-unknown-unknown/release/work_token.wasm
+            contracts/target/wasm32-unknown-unknown/release/escrow_contract.wasm
 
   # ── Frontend build & type check ────────────────────────────────────────────
   frontend:

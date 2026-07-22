@@ -68,6 +68,7 @@ function scValToJob(val: xdr.ScVal): Job {
 
   // amounts come back as bigint from scValToNative
   function toBigInt(v: unknown): bigint {
+    if (v === undefined || v === null) return 0n;
     if (typeof v === "bigint") return v;
     return BigInt(v as number | string);
   }

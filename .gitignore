@@ -20,3 +20,6 @@ Thumbs.db
 .vscode/
 .idea/
 .vercel
+*.tsbuildinfo
+scratch_test.js
+

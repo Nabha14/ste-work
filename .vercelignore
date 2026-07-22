@@ -1,0 +1,5 @@
+contracts
+node_modules
+.next
+.git
+.vercel
