@@ -8,6 +8,21 @@
 
 ---
 
+## Submission Resources
+
+| Resource | Link |
+|---|---|
+| Live testnet dApp | [ste-work.vercel.app](https://ste-work.vercel.app) |
+| Demo video | **[Add existing demo-video link before submission]** |
+| Analytics screenshots | **[Add existing analytics-screenshot link before submission]** |
+| Pitch deck content | [10-slide deck outline](docs/PITCH_DECK_CONTENT.md) |
+| Exported testnet dataset | ✅ Complete — 40/40 new-wallet interactions succeeded (0 failures); [Excel workbook](data/stellarwork-testnet-user-dataset.xlsx) · [Explorer evidence](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
+| Escrow contract | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
+
+> The demo video and analytics screenshots are already complete. Their final hosted links should replace the two marked placeholders without changing this README structure.
+
+---
+
 ## What is StellarWork?
 
 StellarWork eliminates trust between clients and freelancers by encoding the entire payment agreement into immutable Soroban smart contracts. Funds are locked on-chain and released automatically when milestones are approved — no middlemen, no platform fees, no trust required.
@@ -31,13 +46,22 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Admin panel | ✅ `/admin` — platform stats, all disputes, resolve on-chain |
 | User profile & reputation | ✅ `/profile` — WORK score, reputation badge, job history |
 | SEO & OG metadata | ✅ OpenGraph image, Twitter card, keywords, metadataBase |
-| 5+ users onboarded | ✅ 5 users onboarded · [Feedback Form](https://forms.gle/rF1U7afEDLaPwTte8) · [View Responses](https://docs.google.com/spreadsheets/d/1OZ0SbeZdSnzPAKeN_SpHhPx5mpppctxkoUVRPD1NQIo/edit?usp=sharing) |
+| User-validation evidence | ✅ Existing onboarding feedback + 50-user testnet interaction dataset |
 
 ---
 
-## User Feedback — 5 Onboarded Users
+## User Feedback & Iteration
 
 📊 **[Full Responses Spreadsheet](https://docs.google.com/spreadsheets/d/1OZ0SbeZdSnzPAKeN_SpHhPx5mpppctxkoUVRPD1NQIo/edit?usp=sharing)**
+
+### Feedback Inputs
+
+StellarWork uses two clearly separated validation inputs:
+
+- **Usability feedback:** the five-person onboarding study below captures qualitative product feedback.
+- **Testnet reliability dataset:** the 50-user dataset records distinct testnet wallet interactions. It validates transaction visibility and contract throughput; it is not presented as human survey feedback.
+
+The Step 3 UX improvements focused on the recurring usability signals: users needed more confidence while a transaction moved from Freighter to chain confirmation, clearer recovery when chain reads were slow, and a more direct first-wallet connection path.
 
 | Name | Wallet | UX Score | Understood? | Liked | Feature Request | Bug Reported |
 |---|---|---|---|---|---|---|
@@ -47,7 +71,15 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Vaishnavi Deore | `GBKLRB...KU65S` | 9/10 | Yes | — | Deliverable link preview | Own jobs mixed in open list |
 | Subodh Ingle | `GDK6LO...YQ5C7` | 6/10 | Yes | Easy job application | Public shareable profile page | None |
 
-### Feedback-Driven Changes
+### Step 3 Feedback-Driven Improvements
+
+| Improvement | Feedback signal | Outcome | Commit placeholder |
+|---|---|---|---|
+| Transaction lifecycle panel | Signing and chain confirmation felt opaque | Shows prepare → sign → on-chain confirmation and exposes the Stellar Expert transaction link | `[commit link: UX transaction state]` |
+| Resilient job refresh | Slow or incomplete RPC reads made the UI feel unstable | Preserves successful job reads, refreshes every 30 seconds, and shows when data was last updated | `[commit link: RPC resilience]` |
+| Wallet-ready onboarding | New users were unsure when their wallet was ready | Adds a live Freighter connection checkpoint within onboarding | `[commit link: onboarding wallet check]` |
+
+### Earlier Feedback-Driven Changes
 
 | Change | Type | Commit |
 |---|---|---|
@@ -81,7 +113,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Advanced contract patterns | ✅ Milestone state machine, dispute resolution, time-locked deadlines |
 | Production readiness | ✅ CI/CD via GitHub Actions, deployed to Stellar testnet |
 | Mobile responsive design | ✅ Fully responsive across all pages |
-| Contract tests | ✅ 50 unit tests (10 WorkToken + 40 EscrowContract) |
+| Contract tests | ✅ 56 unit tests (11 WorkToken + 45 EscrowContract) |
 
 ---
 
@@ -100,7 +132,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 ## Tech Stack
 
 - **Smart Contracts** — Rust + Soroban SDK 22
-- **Frontend** — Next.js 14, TypeScript, Tailwind CSS
+- **Frontend** — Next.js 16, TypeScript, Tailwind CSS
 - **Wallet** — Freighter (Stellar browser extension)
 - **Chain interaction** — `@stellar/stellar-sdk` Soroban RPC
 - **CI/CD** — GitHub Actions
@@ -131,10 +163,10 @@ stellarwork/
 └── contracts/
     ├── work_token/         # SEP-41 WORK reputation token
     │   ├── src/lib.rs
-    │   └── src/test.rs     # 10 unit tests
+    │   └── src/test.rs     # 11 unit tests
     └── escrow_contract/    # Milestone escrow state machine
         ├── src/lib.rs
-        └── src/test.rs     # 35 unit tests
+        └── src/test.rs     # 45 unit tests
 ```
 
 ---
@@ -181,7 +213,7 @@ cd contracts
 stellar contract build
 ```
 
-### Run all tests (50 passing)
+### Run all tests (56 passing)
 
 ```bash
 cd contracts
@@ -190,13 +222,13 @@ cargo test --workspace
 
 Output:
 ```
-test result: ok. 40 passed; 0 failed  ← EscrowContract
-test result: ok. 10 passed; 0 failed  ← WorkToken
+test result: ok. 45 passed; 0 failed  ← EscrowContract
+test result: ok. 11 passed; 0 failed  ← WorkToken
 ```
 
 ### Test coverage
 
-**WorkToken (10 tests)**
+**WorkToken (11 tests)**
 - `test_initialize_sets_metadata`
 - `test_initialize_zero_supply`
 - `test_initialize_twice_panics`
@@ -207,8 +239,9 @@ test result: ok. 10 passed; 0 failed  ← WorkToken
 - `test_mint_zero_panics`
 - `test_mint_negative_panics`
 - `test_set_escrow_updates_minter`
+- `test_set_admin_rotates_admin_key`
 
-**EscrowContract (40 tests)**
+**EscrowContract (45 tests)**
 - Initialize, double-init guard
 - Post job: id, count, fund transfer, stored data, multi-milestone, validation panics, token whitelist verification
 - Accept job: assigns freelancer, double-accept guard, nonexistent job
@@ -221,6 +254,19 @@ test result: ok. 10 passed; 0 failed  ← WorkToken
 - Refund milestone: client refund milestone on deadline breach if not submitted
 - List jobs: empty, all, pagination
 - Full lifecycle integration test
+- Security regressions: zero-value milestones, expired deadlines, late delivery, self-assignment, and unaccepted-job refunds
+
+### Security & State-Management Hardening
+
+- Bounded job, description, deliverable, milestone, and pagination inputs to keep storage and execution costs predictable.
+- Checked job, balance, supply, and basis-point arithmetic to fail safely on invalid values.
+- Explicit `remaining` escrow accounting prevents a milestone from settling twice.
+- Deadline and acceptance guards close refund and late-submission edge cases.
+- WORK token administration supports planned key rotation while preserving escrow-only minting.
+
+### Redeploy Optimized Contracts
+
+Use [scripts/redeploy-testnet-contracts.sh](scripts/redeploy-testnet-contracts.sh) after review. It is explicitly testnet-only, builds both WASM artifacts, deploys them in dependency order, initializes both contracts, and prints the environment values to add to `.env.local`.
 
 ---
 
@@ -236,6 +282,8 @@ approve_milestone()→ client approves → releases XLM + mints WORK tokens ← 
 dispute_milestone()→ either party raises dispute
 resolve_dispute() → admin splits funds by basis points (0–10000)
 claim_timeout()   → freelancer claims if deadline passed and client unresponsive
+refund_milestone()→ client reclaims an unsubmitted overdue milestone
+cancel_job()      → client cancels an unaccepted job and receives a full refund
 ```
 
 ### WorkToken (SEP-41)
@@ -246,6 +294,7 @@ mint()         → only callable by EscrowContract (inter-contract auth)
 balance()      → returns WORK token balance for address
 total_supply() → total WORK tokens minted
 set_escrow()   → admin can update escrow contract address
+set_admin()    → rotates the admin key for long-lived deployments
 ```
 
 ### Inter-contract call flow
@@ -257,6 +306,17 @@ Client calls approve_milestone()
        └─ WorkToken verifies caller is EscrowContract
        └─ WorkToken mints WORK reputation tokens
 ```
+
+---
+
+## Roadmap
+
+| Horizon | Focus | Outcome |
+|---|---|---|
+| Now | Testnet validation | 50-user wallet-interaction dataset, explorer evidence, and feedback-led UX iteration |
+| Next | Product reliability | Indexed activity feed, transaction notifications, and richer dispute evidence |
+| Pilot | Repeat workflows | Curated client/freelancer cohorts completing multi-milestone work |
+| Mainnet readiness | Security and operations | Independent review, monitoring, admin policy, and staged deployment |
 
 ---
 
