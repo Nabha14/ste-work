@@ -28,6 +28,7 @@ export default function Jobs() {
   const { address, isConnected, connect, signTransaction } = useWallet();
   const [jobs, setJobs] = useState<Job[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [showPostModal, setShowPostModal] = useState(false);
@@ -38,14 +39,22 @@ export default function Jobs() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("open");
   const [milestoneFilter, setMilestoneFilter] = useState(0);
 
-  const loadJobs = useCallback(async () => {
-    setLoading(true); setError(null);
-    try { setJobs(await listJobs(0n, 50n)); }
+  const loadJobs = useCallback(async (background = false) => {
+    if (!background) setLoading(true);
+    setError(null);
+    try {
+      setJobs(await listJobs(0n, 50n));
+      setLastUpdated(new Date());
+    }
     catch (e: any) { setError(e.message ?? "Failed to load jobs from chain"); }
-    finally { setLoading(false); }
+    finally { if (!background) setLoading(false); }
   }, []);
 
   useEffect(() => { loadJobs(); }, [loadJobs]);
+  useEffect(() => {
+    const refresh = window.setInterval(() => { loadJobs(true); }, 30_000);
+    return () => window.clearInterval(refresh);
+  }, [loadJobs]);
 
   const handleAccept = async (job: Job) => {
     if (!isConnected || !address) { connect(); return; }
@@ -93,11 +102,13 @@ export default function Jobs() {
           <div>
             <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.5px" }}>Browse Jobs</h1>
             <p style={{ fontSize: 13, color: "#555", marginTop: 4 }}>
-              {loading ? "Loading from Stellar testnet..." : `${openCount} open jobs on-chain`}
+              {loading
+                ? "Loading from Stellar testnet..."
+                : `${openCount} open jobs on-chain${lastUpdated ? ` · updated ${lastUpdated.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}`}
             </p>
           </div>
           <div style={{ display: "flex", gap: 10 }}>
-            <button onClick={loadJobs} style={ghostBtn} title="Refresh">↻</button>
+            <button onClick={() => loadJobs()} disabled={loading} style={{ ...ghostBtn, opacity: loading ? 0.55 : 1 }} title="Refresh on-chain jobs">↻</button>
             <button onClick={() => isConnected ? setShowPostModal(true) : connect()} style={redBtn}>
               <Plus size={14} /> Post a Job
             </button>
@@ -164,7 +175,7 @@ export default function Jobs() {
               <div style={{ fontSize: 13, fontWeight: 600, color: "#e8323c" }}>Failed to load jobs</div>
               <div style={{ fontSize: 12, color: "#888", marginTop: 2 }}>{error}</div>
             </div>
-            <button onClick={loadJobs} style={{ ...redBtn, marginLeft: "auto", fontSize: 12, padding: "6px 14px" }}>Retry</button>
+            <button onClick={() => loadJobs()} style={{ ...redBtn, marginLeft: "auto", fontSize: 12, padding: "6px 14px" }}>Retry</button>
           </div>
         )}
 
@@ -226,7 +237,7 @@ export default function Jobs() {
       </div>
 
       {showPostModal && (
-        <PostJobModal onClose={() => setShowPostModal(false)} onSuccess={() => { setShowPostModal(false); loadJobs(); }} />
+        <PostJobModal onClose={() => setShowPostModal(false)} onSuccess={() => { loadJobs(); }} />
       )}
     </div>
   );
