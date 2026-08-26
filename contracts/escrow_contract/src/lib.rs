@@ -10,6 +10,17 @@ use soroban_sdk::{
 
 mod test;
 
+const REVIEW_WINDOW_SECONDS: u64 = 3 * 24 * 60 * 60;
+const BPS_DENOMINATOR: i128 = 10_000;
+const STROOPS_PER_100_XLM: i128 = 1_000_000_000;
+const MAX_MILESTONES: u32 = 20;
+const MAX_TITLE_BYTES: u32 = 120;
+const MAX_DESCRIPTION_BYTES: u32 = 2_000;
+const MAX_DELIVERABLE_BYTES: u32 = 512;
+// Caps input to a practical amount and keeps every basis-point calculation
+// comfortably within i128 bounds.
+const MAX_JOB_TOTAL_STROOPS: i128 = 1_000_000_000_000_000;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 #[contracttype]
@@ -43,12 +54,16 @@ pub struct Job {
     pub freelancer:  Option<Address>,
     pub token:       Address,        // XLM native token address
     pub total:       i128,
+    // Explicit escrow accounting invariant. Every payout/refund decrements
+    // this value, making accidental double settlement fail closed.
+    pub remaining:   i128,
     pub milestones:  Vec<Milestone>,
     pub created_at:  u64,
     pub is_open:     bool,           // accepting applications
 }
 
 #[contracttype]
+#[derive(Clone)]
 pub enum DataKey {
     Job(u64),
     JobCount,
@@ -100,13 +115,30 @@ impl EscrowContract {
             .expect("xlm token not set");
         assert!(xlm_token == allowed_xlm, "unsupported token");
 
+        assert!(!title.is_empty(), "title required");
+        assert!(title.len() <= MAX_TITLE_BYTES, "title too long");
+        assert!(!description.is_empty(), "description required");
+        assert!(description.len() <= MAX_DESCRIPTION_BYTES, "description too long");
+
         let n = milestone_titles.len();
         assert!(n > 0, "need at least one milestone");
+        assert!(n <= MAX_MILESTONES, "too many milestones");
         assert!(n == milestone_amounts.len(), "titles/amounts mismatch");
         assert!(n == milestone_deadlines.len(), "titles/deadlines mismatch");
 
-        let total: i128 = milestone_amounts.iter().sum();
-        assert!(total > 0, "total must be positive");
+        let now = env.ledger().timestamp();
+        let mut total = 0_i128;
+        for i in 0..n {
+            let milestone_title = milestone_titles.get(i).unwrap();
+            let amount = milestone_amounts.get(i).unwrap();
+            let deadline = milestone_deadlines.get(i).unwrap();
+            assert!(!milestone_title.is_empty(), "milestone title required");
+            assert!(milestone_title.len() <= MAX_TITLE_BYTES, "milestone title too long");
+            assert!(amount > 0, "milestone amount must be positive");
+            total = total.checked_add(amount).expect("total overflow");
+            assert!(deadline == 0 || deadline > now, "deadline must be in the future");
+        }
+        assert!(total <= MAX_JOB_TOTAL_STROOPS, "job total too large");
 
         // Pull funds from client into this contract
         let token_client = token::Client::new(&env, &xlm_token);
@@ -130,7 +162,7 @@ impl EscrowContract {
             .instance()
             .get(&DataKey::JobCount)
             .unwrap_or(0);
-        let job_id = count + 1;
+        let job_id = count.checked_add(1).expect("job id overflow");
 
         let job = Job {
             id:          job_id,
@@ -140,8 +172,9 @@ impl EscrowContract {
             freelancer:  None,
             token:       xlm_token,
             total,
+            remaining:   total,
             milestones,
-            created_at:  env.ledger().timestamp(),
+            created_at:  now,
             is_open:     true,
         };
 
@@ -165,6 +198,7 @@ impl EscrowContract {
 
         assert!(job.is_open, "job not open");
         assert!(job.freelancer.is_none(), "already accepted");
+        assert!(freelancer != job.client, "client cannot accept own job");
 
         job.freelancer = Some(freelancer.clone());
         job.is_open = false;
@@ -185,13 +219,14 @@ impl EscrowContract {
         job.client.require_auth();
         assert!(job.is_open, "job is not open or already accepted");
         assert!(job.freelancer.is_none(), "freelancer already assigned");
+        assert!(job.remaining == job.total, "job has already been settled");
 
         // Refund total amount to client
         let token_client = token::Client::new(&env, &job.token);
         token_client.transfer(
             &env.current_contract_address(),
             &job.client,
-            &job.total,
+            &job.remaining,
         );
 
         // Update all milestones to Refunded
@@ -202,6 +237,7 @@ impl EscrowContract {
             updated_milestones.push_back(m);
         }
         job.milestones = updated_milestones;
+        job.remaining = 0;
         job.is_open = false;
 
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -217,6 +253,7 @@ impl EscrowContract {
             .expect("job not found");
 
         job.client.require_auth();
+        assert!(job.freelancer.is_some(), "job not accepted");
 
         let mut milestone = job.milestones.get(milestone_index).expect("bad index");
         assert!(
@@ -237,6 +274,7 @@ impl EscrowContract {
             &milestone.amount,
         );
 
+        Self::decrease_remaining(&mut job, milestone.amount);
         milestone.status = MilestoneStatus::Refunded;
         job.milestones.set(milestone_index, milestone);
 
@@ -262,16 +300,26 @@ impl EscrowContract {
 
         let freelancer = job.freelancer.clone().expect("no freelancer assigned");
         freelancer.require_auth();
+        assert!(!deliverable.is_empty(), "deliverable required");
+        assert!(deliverable.len() <= MAX_DELIVERABLE_BYTES, "deliverable too long");
 
         let mut milestone = job.milestones.get(milestone_index).expect("bad index");
         assert!(
             milestone.status == MilestoneStatus::Locked,
             "milestone not in Locked state"
         );
+        assert!(
+            milestone.deadline == 0 || env.ledger().timestamp() <= milestone.deadline,
+            "completion deadline passed"
+        );
 
         milestone.status = MilestoneStatus::Submitted;
         milestone.deliverable = deliverable;
-        milestone.review_deadline = env.ledger().timestamp() + 259200; // 3 days review period
+        milestone.review_deadline = env
+            .ledger()
+            .timestamp()
+            .checked_add(REVIEW_WINDOW_SECONDS)
+            .expect("review deadline overflow");
         job.milestones.set(milestone_index, milestone);
 
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -308,6 +356,7 @@ impl EscrowContract {
             &milestone.amount,
         );
 
+        Self::decrease_remaining(&mut job, milestone.amount);
         milestone.status = MilestoneStatus::Approved;
         job.milestones.set(milestone_index, milestone.clone());
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -322,7 +371,7 @@ impl EscrowContract {
             .expect("work token not set");
 
         // 1 WORK token per 100 XLM (stroops: 1 XLM = 10_000_000 stroops)
-        let work_amount: i128 = (milestone.amount / 100_0000000).max(1);
+        let work_amount: i128 = (milestone.amount / STROOPS_PER_100_XLM).max(1);
 
         // Call WorkToken.mint — this is the inter-contract call
         let work_token_client = work_token::Client::new(&env, &work_token_addr);
@@ -382,7 +431,7 @@ impl EscrowContract {
             .expect("not initialized");
         admin.require_auth();
 
-        assert!(freelancer_bps <= 10000, "bps must be <= 10000");
+        assert!(freelancer_bps <= BPS_DENOMINATOR as u32, "bps must be <= 10000");
 
         let mut job: Job = env
             .storage()
@@ -399,8 +448,15 @@ impl EscrowContract {
         let freelancer = job.freelancer.clone().expect("no freelancer");
         let token_client = token::Client::new(&env, &job.token);
 
-        let freelancer_amount = milestone.amount * freelancer_bps as i128 / 10000;
-        let client_amount = milestone.amount - freelancer_amount;
+        let freelancer_amount = milestone
+            .amount
+            .checked_mul(freelancer_bps as i128)
+            .expect("settlement overflow")
+            / BPS_DENOMINATOR;
+        let client_amount = milestone
+            .amount
+            .checked_sub(freelancer_amount)
+            .expect("settlement underflow");
 
         if freelancer_amount > 0 {
             token_client.transfer(
@@ -417,6 +473,7 @@ impl EscrowContract {
             );
         }
 
+        Self::decrease_remaining(&mut job, milestone.amount);
         milestone.status = MilestoneStatus::Approved;
         job.milestones.set(milestone_index, milestone);
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -429,7 +486,7 @@ impl EscrowContract {
                 .get(&DataKey::WorkToken)
                 .expect("work token not set");
 
-            let work_amount: i128 = (freelancer_amount / 100_0000000).max(1);
+            let work_amount: i128 = (freelancer_amount / STROOPS_PER_100_XLM).max(1);
 
             let work_token_client = work_token::Client::new(&env, &work_token_addr);
             work_token_client.mint(&freelancer, &work_amount);
@@ -470,6 +527,7 @@ impl EscrowContract {
             &milestone.amount,
         );
 
+        Self::decrease_remaining(&mut job, milestone.amount);
         milestone.status = MilestoneStatus::Approved;
         job.milestones.set(milestone_index, milestone.clone());
         env.storage().persistent().set(&DataKey::Job(job_id), &job);
@@ -482,7 +540,7 @@ impl EscrowContract {
             .expect("work token not set");
 
         // 1 WORK token per 100 XLM (stroops: 1 XLM = 10_000_000 stroops)
-        let work_amount: i128 = (milestone.amount / 100_0000000).max(1);
+        let work_amount: i128 = (milestone.amount / STROOPS_PER_100_XLM).max(1);
 
         // Call WorkToken.mint — this is the inter-contract call
         let work_token_client = work_token::Client::new(&env, &work_token_addr);
@@ -510,7 +568,7 @@ impl EscrowContract {
             .unwrap_or(0)
     }
 
-    /// Returns all job IDs (paginated: pass offset + limit).
+    /// Returns at most 100 IDs to bound response size and read costs.
     pub fn list_jobs(env: Env, offset: u64, limit: u64) -> Vec<u64> {
         let count: u64 = env
             .storage()
@@ -519,13 +577,26 @@ impl EscrowContract {
             .unwrap_or(0);
 
         let mut ids: Vec<u64> = Vec::new(&env);
-        let start = offset + 1;
-        let end = (offset + limit + 1).min(count + 1);
+        if offset >= count || limit == 0 {
+            return ids;
+        }
 
-        for id in start..end {
-            ids.push_back(id);
+        let take = limit.min(100).min(count - offset);
+        for index in 0..take {
+            ids.push_back(offset + index + 1);
         }
         ids
+    }
+}
+
+impl EscrowContract {
+    fn decrease_remaining(job: &mut Job, amount: i128) {
+        assert!(amount > 0, "settlement amount must be positive");
+        assert!(job.remaining >= amount, "insufficient escrow balance");
+        job.remaining = job
+            .remaining
+            .checked_sub(amount)
+            .expect("remaining balance underflow");
     }
 }
 
