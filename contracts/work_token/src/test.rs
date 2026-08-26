@@ -132,3 +132,11 @@ fn test_set_escrow_updates_minter() {
     client.mint(&recipient, &1i128);
     assert_eq!(client.balance(&recipient), 1i128);
 }
+
+#[test]
+fn test_set_admin_rotates_admin_key() {
+    let (env, _, _, _, client) = setup();
+    let new_admin = Address::generate(&env);
+    client.set_admin(&new_admin);
+    assert_eq!(client.admin(), new_admin);
+}
