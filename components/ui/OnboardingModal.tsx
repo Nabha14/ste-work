@@ -7,6 +7,7 @@ import {
   X, Wallet, Coins, Briefcase, CheckCircle2,
   ArrowRight, ExternalLink, ChevronLeft,
 } from "lucide-react";
+import { useWallet } from "@/lib/wallet-context";
 
 const STEPS = [
   {
@@ -179,6 +180,7 @@ const STEPS = [
 ];
 
 export default function OnboardingModal() {
+  const { address, isConnected, isConnecting, connect } = useWallet();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState(0);
 
@@ -249,6 +251,36 @@ export default function OnboardingModal() {
           {/* Step content */}
           <div style={{ marginBottom: 28 }}>
             {current.content}
+            {current.id === "wallet" && (
+              <div style={{
+                marginTop: 16, padding: "12px 14px", borderRadius: 10,
+                background: isConnected ? "rgba(34,197,94,0.08)" : "rgba(232,50,60,0.08)",
+                border: `1px solid ${isConnected ? "rgba(34,197,94,0.24)" : "rgba(232,50,60,0.22)"}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+              }}>
+                <div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: isConnected ? "#22c55e" : "#fff" }}>
+                    {isConnected ? "Wallet connected to Stellar testnet" : "Connect before your first on-chain action"}
+                  </div>
+                  <div style={{ fontSize: 11, color: "#666", marginTop: 3, fontFamily: isConnected ? "monospace" : "inherit" }}>
+                    {isConnected && address ? `${address.slice(0, 8)}…${address.slice(-6)}` : "Freighter will ask for permission in the next step."}
+                  </div>
+                </div>
+                {!isConnected && (
+                  <button
+                    onClick={connect}
+                    disabled={isConnecting}
+                    style={{
+                      flexShrink: 0, padding: "8px 11px", borderRadius: 8, border: "none",
+                      background: "#e8323c", color: "#fff", fontSize: 12, fontWeight: 700,
+                      cursor: isConnecting ? "wait" : "pointer", opacity: isConnecting ? 0.7 : 1,
+                    }}
+                  >
+                    {isConnecting ? "Connecting..." : "Connect Freighter"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Step dots */}
