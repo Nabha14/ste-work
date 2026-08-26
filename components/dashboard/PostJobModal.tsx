@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { X, Plus, Trash2, Loader2, ChevronDown, ChevronUp, FileCode2, ExternalLink } from "lucide-react";
+import { X, Plus, Trash2, Loader2, ChevronDown, ChevronUp, FileCode2, ExternalLink, CheckCircle2, Circle } from "lucide-react";
 import { useWallet } from "@/lib/wallet-context";
 import { buildPostJobTx, submitSignedTx } from "@/lib/contracts/client";
 import { ESCROW_CONTRACT_ID, NETWORK } from "@/lib/contracts/config";
@@ -13,6 +13,8 @@ interface Milestone {
   xlm: string;
   deadline: string; // days from now, "" = no deadline
 }
+
+type SubmissionStage = "idle" | "preparing" | "signing" | "confirming" | "confirmed" | "submitted";
 
 export default function PostJobModal({
   onClose,
@@ -29,6 +31,8 @@ export default function PostJobModal({
   ]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submissionStage, setSubmissionStage] = useState<SubmissionStage>("idle");
+  const [transactionHash, setTransactionHash] = useState<string | null>(null);
 
   const addMilestone = () =>
     setMilestones(m => [...m, { title: "", xlm: "", deadline: "" }]);
@@ -44,13 +48,24 @@ export default function PostJobModal({
   const handleSubmit = async () => {
     if (!address) return;
     if (!title.trim() || !description.trim()) { setError("Title and description required"); return; }
+    if (title.trim().length > 120 || description.trim().length > 2000) {
+      setError("Keep the title under 120 characters and the description under 2,000 characters");
+      return;
+    }
+    if (milestones.length > 20) { setError("A job can contain up to 20 milestones"); return; }
     if (milestones.some(m => !m.title.trim() || !m.xlm || parseFloat(m.xlm) <= 0)) {
       setError("All milestones need a title and amount > 0");
+      return;
+    }
+    if (milestones.some(m => m.title.trim().length > 120 || (m.deadline && parseInt(m.deadline) < 1))) {
+      setError("Milestone titles must be under 120 characters; deadlines must be at least one day");
       return;
     }
 
     setSubmitting(true);
     setError(null);
+    setTransactionHash(null);
+    setSubmissionStage("preparing");
     try {
       const now = Math.floor(Date.now() / 1000);
       const xdr = await buildPostJobTx(
@@ -63,9 +78,12 @@ export default function PostJobModal({
           m.deadline ? BigInt(now + parseInt(m.deadline) * 86400) : 0n
         ),
       );
+      setSubmissionStage("signing");
       const signed = await signTransaction(xdr);
-      await submitSignedTx(signed);
-      onSuccess();
+      setSubmissionStage("confirming");
+      const receipt = await submitSignedTx(signed);
+      setTransactionHash(receipt.hash);
+      setSubmissionStage(receipt.confirmed ? "confirmed" : "submitted");
     } catch (e: any) {
       setError(e.message ?? "Transaction failed");
     } finally {
@@ -198,6 +216,8 @@ export default function PostJobModal({
         {/* Contract Info */}
         <ContractDetails />
 
+        <TransactionProgress stage={submissionStage} transactionHash={transactionHash} />
+
         {error && (
           <div style={{
             background: "rgba(232,50,60,0.08)", border: "1px solid rgba(232,50,60,0.2)",
@@ -210,7 +230,7 @@ export default function PostJobModal({
 
         <button
           onClick={handleSubmit}
-          disabled={submitting}
+          disabled={submitting || submissionStage === "confirmed" || submissionStage === "submitted"}
           style={{
             width: "100%", padding: "13px",
             background: "#e8323c", border: "none", borderRadius: 10,
@@ -221,8 +241,21 @@ export default function PostJobModal({
           }}
         >
           {submitting && <Loader2 size={16} />}
-          {submitting ? "Signing & Submitting..." : `Post Job · Lock ${totalXlm} XLM`}
+          {submitting ? stageLabel(submissionStage) : `Post Job · Lock ${totalXlm} XLM`}
         </button>
+
+        {(submissionStage === "confirmed" || submissionStage === "submitted") && (
+          <button
+            onClick={() => { onSuccess(); onClose(); }}
+            style={{
+              width: "100%", marginTop: 10, padding: "11px", borderRadius: 10,
+              background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#fff",
+              fontSize: 13, fontWeight: 700, cursor: "pointer",
+            }}
+          >
+            Close & Refresh Jobs
+          </button>
+        )}
       </div>
     </div>
   );
@@ -239,6 +272,58 @@ const inputStyle: React.CSSProperties = {
   borderRadius: 9, color: "#fff", fontSize: 13,
   outline: "none", marginBottom: 0,
 };
+
+function stageLabel(stage: SubmissionStage) {
+  if (stage === "preparing") return "Preparing transaction...";
+  if (stage === "signing") return "Confirm in Freighter...";
+  return "Confirming on Stellar...";
+}
+
+function TransactionProgress({ stage, transactionHash }: { stage: SubmissionStage; transactionHash: string | null }) {
+  if (stage === "idle") return null;
+  const explorerBase = NETWORK === "mainnet"
+    ? "https://stellar.expert/explorer/public/tx"
+    : "https://stellar.expert/explorer/testnet/tx";
+  const steps = [
+    { key: "preparing", label: "Prepared" },
+    { key: "signing", label: "Signed" },
+    { key: "confirming", label: "On-chain confirmation" },
+  ] as const;
+  const activeIndex = stage === "preparing" ? 0 : stage === "signing" ? 1 : 2;
+  const complete = stage === "confirmed" || stage === "submitted";
+
+  return (
+    <div style={{
+      marginBottom: 16, padding: "12px 14px", borderRadius: 10,
+      background: complete ? "rgba(34,197,94,0.08)" : "rgba(167,139,250,0.08)",
+      border: `1px solid ${complete ? "rgba(34,197,94,0.25)" : "rgba(167,139,250,0.24)"}`,
+    }}>
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        {steps.map((item, index) => {
+          const done = complete || index < activeIndex;
+          const current = !complete && index === activeIndex;
+          return (
+            <div key={item.key} style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 11, color: done ? "#22c55e" : current ? "#c4b5fd" : "#555" }}>
+              {done ? <CheckCircle2 size={13} /> : <Circle size={13} />}
+              {item.label}
+            </div>
+          );
+        })}
+      </div>
+      {transactionHash && (
+        <a
+          href={`${explorerBase}/${transactionHash}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 5, marginTop: 9, fontSize: 11, color: "#22c55e", textDecoration: "none" }}
+        >
+          <ExternalLink size={12} />
+          {stage === "confirmed" ? "Confirmed on Stellar Expert" : "Transaction submitted — view on Stellar Expert"}
+        </a>
+      )}
+    </div>
+  );
+}
 
 // ── Contract transparency panel ───────────────────────────────────────────────
 
