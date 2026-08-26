@@ -13,6 +13,7 @@ mod test;
 // ── Storage keys ──────────────────────────────────────────────────────────────
 
 #[contracttype]
+#[derive(Clone)]
 pub enum DataKey {
     Balance(Address),
     Admin,
@@ -62,28 +63,35 @@ impl WorkToken {
             .unwrap_or(0)
     }
 
-    /// Mint WORK tokens — only callable by the EscrowContract (inter-contract call).
-    pub fn mint(env: Env, to: Address, amount: i128) {
-        let escrow: Address = env
-            .storage()
+    pub fn admin(env: Env) -> Address {
+        env.storage()
+            .instance()
+            .get(&DataKey::Admin)
+            .expect("not initialized")
+    }
+
+    pub fn escrow_contract(env: Env) -> Address {
+        env.storage()
             .instance()
             .get(&DataKey::EscrowContract)
-            .expect("escrow not set");
+            .expect("not initialized")
+    }
+
+    /// Mint WORK tokens — only callable by the EscrowContract (inter-contract call).
+    pub fn mint(env: Env, to: Address, amount: i128) {
+        let escrow = Self::escrow_contract(env.clone());
 
         // Only the escrow contract can mint
         escrow.require_auth();
 
         assert!(amount > 0, "amount must be positive");
 
+        let balance_key = DataKey::Balance(to.clone());
         let current: i128 = env
             .storage()
             .persistent()
-            .get(&DataKey::Balance(to.clone()))
+            .get(&balance_key)
             .unwrap_or(0);
-
-        env.storage()
-            .persistent()
-            .set(&DataKey::Balance(to.clone()), &(current + amount));
 
         let supply: i128 = env
             .storage()
@@ -91,9 +99,10 @@ impl WorkToken {
             .get(&DataKey::TotalSupply)
             .unwrap_or(0);
 
-        env.storage()
-            .instance()
-            .set(&DataKey::TotalSupply, &(supply + amount));
+        let next_balance = current.checked_add(amount).expect("balance overflow");
+        let next_supply = supply.checked_add(amount).expect("supply overflow");
+        env.storage().persistent().set(&balance_key, &next_balance);
+        env.storage().instance().set(&DataKey::TotalSupply, &next_supply);
 
         env.events().publish(
             (symbol_short!("mint"), to),
@@ -103,15 +112,21 @@ impl WorkToken {
 
     /// Update the escrow contract address (admin only).
     pub fn set_escrow(env: Env, new_escrow: Address) {
-        let admin: Address = env
-            .storage()
-            .instance()
-            .get(&DataKey::Admin)
-            .expect("not initialized");
+        let admin = Self::admin(env.clone());
         admin.require_auth();
         env.storage()
             .instance()
             .set(&DataKey::EscrowContract, &new_escrow);
+        env.events().publish((symbol_short!("config"),), new_escrow);
+    }
+
+    /// Rotate the administrative key without adding a public minting path.
+    pub fn set_admin(env: Env, new_admin: Address) {
+        let admin = Self::admin(env.clone());
+        admin.require_auth();
+        assert!(admin != new_admin, "admin unchanged");
+        env.storage().instance().set(&DataKey::Admin, &new_admin);
+        env.events().publish((symbol_short!("admin"),), new_admin);
     }
 
     // ── Non-Transferable SEP-41 Compliance Methods ─────────────────────────
