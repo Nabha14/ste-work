@@ -168,7 +168,17 @@ export async function listJobs(offset: bigint, limit: bigint): Promise<Job[]> {
   const ids = scValToNative(idsVal) as (number | bigint)[];
   if (!ids || ids.length === 0) return [];
 
-  const jobs = await Promise.all(ids.map(id => getJob(BigInt(id))));
+  // A single archived/slow entry should not blank the whole marketplace.
+  // Return every job the RPC was able to read and surface an error only when
+  // none of the requested records were available.
+  const results = await Promise.allSettled(ids.map(id => getJob(BigInt(id))));
+  const jobs = results
+    .filter((result): result is PromiseFulfilledResult<Job> => result.status === "fulfilled")
+    .map(result => result.value);
+
+  if (jobs.length === 0) {
+    throw new Error("Stellar RPC could not load the requested jobs. Please retry.");
+  }
   return jobs;
 }
 
@@ -473,7 +483,12 @@ export async function buildRefundMilestoneTx(
 
 // ── Submit signed tx ──────────────────────────────────────────────────────────
 
-export async function submitSignedTx(signedXdr: string): Promise<string> {
+export type TransactionReceipt = {
+  hash: string;
+  confirmed: boolean;
+};
+
+export async function submitSignedTx(signedXdr: string): Promise<TransactionReceipt> {
   const rpc = getRpc();
   const tx = TransactionBuilder.fromXDR(signedXdr, NETWORK_PASSPHRASE);
   const result = await rpc.sendTransaction(tx);
@@ -491,5 +506,7 @@ export async function submitSignedTx(signedXdr: string): Promise<string> {
   if (getResult.status === "FAILED") {
     throw new Error("Transaction failed on chain");
   }
-  return result.hash;
+  // A submitted transaction can take longer than the UI polling window to
+  // index. Return its hash either way so users can verify it in the explorer.
+  return { hash: result.hash, confirmed: getResult.status === "SUCCESS" };
 }
