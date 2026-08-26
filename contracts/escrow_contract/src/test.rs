@@ -138,6 +138,34 @@ fn test_post_job_milestone_starts_locked() {
     let id = post_simple_job(&env, &escrow_id, &xlm_id, &client);
     let job = c.get_job(&id);
     assert_eq!(job.milestones.get(0).unwrap().status, MilestoneStatus::Locked);
+    assert_eq!(job.remaining, 100_0000000i128);
+}
+
+#[test]
+#[should_panic(expected = "milestone amount must be positive")]
+fn test_post_job_rejects_zero_amount() {
+    let (env, escrow_id, xlm_id, _, client, _) = setup();
+    EscrowContractClient::new(&env, &escrow_id).post_job(
+        &client, &xlm_id,
+        &s(&env, "Bad"), &s(&env, "desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 0i128],
+        &soroban_sdk::vec![&env, 0u64],
+    );
+}
+
+#[test]
+#[should_panic(expected = "deadline must be in the future")]
+fn test_post_job_rejects_past_deadline() {
+    let (env, escrow_id, xlm_id, _, client, _) = setup();
+    set_time(&env, 1_000u64);
+    EscrowContractClient::new(&env, &escrow_id).post_job(
+        &client, &xlm_id,
+        &s(&env, "Bad"), &s(&env, "desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 1i128],
+        &soroban_sdk::vec![&env, 1_000u64],
+    );
 }
 
 #[test]
@@ -211,6 +239,14 @@ fn test_accept_job_assigns_freelancer() {
 }
 
 #[test]
+#[should_panic(expected = "client cannot accept own job")]
+fn test_accept_job_rejects_client() {
+    let (env, escrow_id, xlm_id, _, client, _) = setup();
+    let id = post_simple_job(&env, &escrow_id, &xlm_id, &client);
+    EscrowContractClient::new(&env, &escrow_id).accept_job(&id, &client);
+}
+
+#[test]
 #[should_panic(expected = "job not open")]
 fn test_accept_job_twice_panics() {
     let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
@@ -242,6 +278,24 @@ fn test_submit_milestone_changes_status() {
     let m   = job.milestones.get(0).unwrap();
     assert_eq!(m.status,      MilestoneStatus::Submitted);
     assert_eq!(m.deliverable, s(&env, "ipfs://QmABC123"));
+}
+
+#[test]
+#[should_panic(expected = "completion deadline passed")]
+fn test_submit_milestone_rejects_late_delivery() {
+    let (env, escrow_id, xlm_id, _, client, freelancer) = setup();
+    set_time(&env, 1_000_000u64);
+    let c = EscrowContractClient::new(&env, &escrow_id);
+    let id = c.post_job(
+        &client, &xlm_id,
+        &s(&env, "Deadline"), &s(&env, "desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 1i128],
+        &soroban_sdk::vec![&env, 1_000_001u64],
+    );
+    c.accept_job(&id, &freelancer);
+    set_time(&env, 1_000_002u64);
+    c.submit_milestone(&id, &0u32, &s(&env, "late"));
 }
 
 #[test]
@@ -576,6 +630,23 @@ fn test_refund_milestone_happy_path() {
     assert_eq!(balance_after - balance_before, 100_0000000i128);
     let job = c.get_job(&id);
     assert_eq!(job.milestones.get(0).unwrap().status, MilestoneStatus::Refunded);
+}
+
+#[test]
+#[should_panic(expected = "job not accepted")]
+fn test_refund_milestone_requires_accepted_job() {
+    let (env, escrow_id, xlm_id, _, client, _) = setup();
+    let c = EscrowContractClient::new(&env, &escrow_id);
+    set_time(&env, 1_000_000u64);
+    let id = c.post_job(
+        &client, &xlm_id,
+        &s(&env, "Job"), &s(&env, "Desc"),
+        &soroban_sdk::vec![&env, s(&env, "M1")],
+        &soroban_sdk::vec![&env, 1i128],
+        &soroban_sdk::vec![&env, 1_000_001u64],
+    );
+    set_time(&env, 1_000_002u64);
+    c.refund_milestone(&id, &0u32);
 }
 
 #[test]

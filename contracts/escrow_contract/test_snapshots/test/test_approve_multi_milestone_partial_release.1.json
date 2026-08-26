@@ -694,6 +694,17 @@
                     },
                     {
                       "key": {
+                        "symbol": "remaining"
+                      },
+                      "val": {
+                        "i128": {
+                          "hi": 0,
+                          "lo": 400000000
+                        }
+                      }
+                    },
+                    {
+                      "key": {
                         "symbol": "title"
                       },
                       "val": {
