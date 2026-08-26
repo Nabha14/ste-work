@@ -73,6 +73,13 @@ jobs:
           key: ${{ runner.os }}-cargo-build-${{ hashFiles('contracts/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-build-
 
+      - name: Build WorkToken WASM for escrow imports
+        working-directory: contracts
+        run: |
+          cargo build -p work_token --target wasm32-unknown-unknown --release
+          mkdir -p target/wasm32v1-none/release
+          cp target/wasm32-unknown-unknown/release/work_token.wasm target/wasm32v1-none/release/work_token.wasm
+
       - name: Build Contracts (WASM)
         working-directory: contracts
         run: cargo build --target wasm32-unknown-unknown --release
