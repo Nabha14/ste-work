@@ -57,6 +57,22 @@ function addressToScVal(addr: string) {
   return new Address(addr).toScVal();
 }
 
+/**
+ * Soroban contract records can outlive a frontend schema change. Keep missing
+ * numeric fields at their safe zero-value instead of letting `BigInt(undefined)`
+ * crash every page that reads a legacy job.
+ */
+function toBigInt(value: unknown, fallback = 0n): bigint {
+  if (typeof value === "bigint") return value;
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) ? BigInt(value) : fallback;
+  }
+  if (typeof value === "string" && /^-?\d+$/.test(value.trim())) {
+    return BigInt(value);
+  }
+  return fallback;
+}
+
 function scValToJob(val: xdr.ScVal): Job {
   const map = scValToNative(val) as Record<string, unknown>;
 
@@ -66,12 +82,7 @@ function scValToJob(val: xdr.ScVal): Job {
     return s as MilestoneStatus;
   }
 
-  // amounts come back as bigint from scValToNative
-  function toBigInt(v: unknown): bigint {
-    if (v === undefined || v === null) return 0n;
-    if (typeof v === "bigint") return v;
-    return BigInt(v as number | string);
-  }
+  const rawMilestones = Array.isArray(map.milestones) ? map.milestones : [];
 
   return {
     id:          toBigInt(map.id),
@@ -81,13 +92,13 @@ function scValToJob(val: xdr.ScVal): Job {
     freelancer:  (map.freelancer as string | null | undefined) ?? null,
     token:       map.token as string,
     total:       toBigInt(map.total),
-    milestones:  (map.milestones as unknown[]).map((m: unknown) => {
+    milestones:  rawMilestones.map((m: unknown) => {
       const ms = m as Record<string, unknown>;
       return {
-        title:       ms.title as string,
+        title:       typeof ms.title === "string" ? ms.title : "Untitled milestone",
         amount:      toBigInt(ms.amount),
         status:      parseStatus(ms.status),
-        deliverable: ms.deliverable as string,
+        deliverable: typeof ms.deliverable === "string" ? ms.deliverable : "",
         deadline:    toBigInt(ms.deadline),
         review_deadline: toBigInt(ms.review_deadline),
       };
@@ -143,9 +154,7 @@ async function simulate(
 
 export async function getJobCount(): Promise<bigint> {
   const val = await simulate(ESCROW_CONTRACT_ID, "job_count", []);
-  const native = scValToNative(val);
-  if (typeof native === "bigint") return native;
-  return BigInt(native as number | string);
+  return toBigInt(scValToNative(val));
 }
 
 export async function getJob(jobId: bigint): Promise<Job> {
@@ -165,13 +174,14 @@ export async function listJobs(offset: bigint, limit: bigint): Promise<Job[]> {
     nativeToScVal(Number(limit),  { type: "u64" }),
   ]);
 
-  const ids = scValToNative(idsVal) as (number | bigint)[];
-  if (!ids || ids.length === 0) return [];
+  const rawIds = scValToNative(idsVal);
+  const ids = Array.isArray(rawIds) ? rawIds.map(id => toBigInt(id)).filter(id => id > 0n) : [];
+  if (ids.length === 0) return [];
 
   // A single archived/slow entry should not blank the whole marketplace.
   // Return every job the RPC was able to read and surface an error only when
   // none of the requested records were available.
-  const results = await Promise.allSettled(ids.map(id => getJob(BigInt(id))));
+  const results = await Promise.allSettled(ids.map(id => getJob(id)));
   const jobs = results
     .filter((result): result is PromiseFulfilledResult<Job> => result.status === "fulfilled")
     .map(result => result.value);
@@ -187,15 +197,19 @@ export async function getWorkTokenBalance(address: string): Promise<bigint> {
     const val = await simulate(WORK_TOKEN_CONTRACT_ID, "balance", [
       addressToScVal(address),
     ]);
-    return BigInt(scValToNative(val) as number);
+    return toBigInt(scValToNative(val));
   } catch {
     return 0n;
   }
 }
 
 export async function getWorkTokenSupply(): Promise<bigint> {
-  const val = await simulate(WORK_TOKEN_CONTRACT_ID, "total_supply", []);
-  return BigInt(scValToNative(val) as number);
+  try {
+    const val = await simulate(WORK_TOKEN_CONTRACT_ID, "total_supply", []);
+    return toBigInt(scValToNative(val));
+  } catch {
+    return 0n;
+  }
 }
 
 // ── Write helpers (return assembled+simulated tx for Freighter to sign) ───────
