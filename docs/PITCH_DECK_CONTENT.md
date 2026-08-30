@@ -59,7 +59,6 @@ Milestone-based freelance escrow on Stellar
 
 - Live testnet dApp with deployed EscrowContract and WorkToken
 - **56 automated contract tests** covering lifecycle, payout, refund, timeout, and dispute paths
-- **[50-user testnet dataset — insert final count and Explorer link]**
 - Feedback loop already translated into product work: clearer loading, safer wallet state, and improved onboarding
 
 **Proof point:** every critical state change is signed, submitted, and independently visible in the Stellar explorer.

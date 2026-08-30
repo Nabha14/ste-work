@@ -15,7 +15,6 @@
 | Live testnet dApp | [ste-work.vercel.app](https://ste-work.vercel.app) |
 | Demo video | **[Add existing demo-video link before submission]** |
 | Pitch deck | [Download the PowerPoint deck](docs/stellarwork-pitch-deck.pptx) · [source outline](docs/PITCH_DECK_CONTENT.md) |
-(https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
 | Escrow contract | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
 
 > The demo video and analytics screenshots are already complete. Their final hosted links should replace the two marked placeholders without changing this README structure.
@@ -45,7 +44,7 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 | Admin panel | ✅ `/admin` — platform stats, all disputes, resolve on-chain |
 | User profile & reputation | ✅ `/profile` — WORK score, reputation badge, job history |
 | SEO & OG metadata | ✅ OpenGraph image, Twitter card, keywords, metadataBase |
-| User-validation evidence | ✅ Existing onboarding feedback + 50-user testnet interaction dataset |
+| User-validation evidence | ✅ Existing onboarding feedback |
 
 ---
 
@@ -55,10 +54,9 @@ StellarWork eliminates trust between clients and freelancers by encoding the ent
 
 ### Feedback Inputs
 
-StellarWork uses two clearly separated validation inputs:
+StellarWork uses qualitative onboarding feedback to guide product iteration:
 
 - **Usability feedback:** the five-person onboarding study below captures qualitative product feedback.
-- **Testnet reliability dataset:** the 50-user dataset records distinct testnet wallet interactions. It validates transaction visibility and contract throughput; it is not presented as human survey feedback.
 
 The Step 3 UX improvements focused on the recurring usability signals: users needed more confidence while a transaction moved from Freighter to chain confirmation, clearer recovery when chain reads were slow, and a more direct first-wallet connection path.
 
@@ -312,7 +310,7 @@ Client calls approve_milestone()
 
 | Horizon | Focus | Outcome |
 |---|---|---|
-| Now | Testnet validation | 50-user wallet-interaction dataset, explorer evidence, and feedback-led UX iteration |
+| Now | Product validation | Contract test coverage and feedback-led UX iteration |
 | Next | Product reliability | Indexed activity feed, transaction notifications, and richer dispute evidence |
 | Pilot | Repeat workflows | Curated client/freelancer cohorts completing multi-milestone work |
 | Mainnet readiness | Security and operations | Independent review, monitoring, admin policy, and staged deployment |
