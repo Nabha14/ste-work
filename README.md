@@ -14,9 +14,8 @@
 |---|---|
 | Live testnet dApp | [ste-work.vercel.app](https://ste-work.vercel.app) |
 | Demo video | **[Add existing demo-video link before submission]** |
-| Analytics screenshots | **[Add existing analytics-screenshot link before submission]** |
 | Pitch deck | [Download the PowerPoint deck](docs/stellarwork-pitch-deck.pptx) · [source outline](docs/PITCH_DECK_CONTENT.md) |
-| Exported testnet dataset | ✅ Complete — 40/40 new-wallet interactions succeeded (0 failures); [Excel workbook](data/stellarwork-testnet-user-dataset.xlsx) · [Explorer evidence](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
+(https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
 | Escrow contract | [Stellar Expert](https://stellar.expert/explorer/testnet/contract/CC7XSNBIJSFMOR7YHPKGHRSEFZWWFF6N5LUBVHCR24XRNM3UQYWK246B) |
 
 > The demo video and analytics screenshots are already complete. Their final hosted links should replace the two marked placeholders without changing this README structure.
